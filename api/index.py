@@ -106,15 +106,20 @@ def translate_ai():
             batch = valid_subs[i:i+batch_size]
             lines_dict = {str(idx + 1): sub.content.replace('\n', ' ').strip() for idx, sub in enumerate(batch)}
             
-            prompt = f"""You are an expert movie subtitle translator.
-Translate the values of the JSON object into natural, fluent, highly conversational target language ({target_lang}).
-Maintain natural dubbing tone, handle idioms correctly, and preserve short punchy subtitle lines.
+            # پرامپت فارسی حرفه‌ای و بهینه‌سازی‌شده برای ترجمه روان زیرنویس
+            prompt = f"""شما یک مترجم حرفه‌ای زیرنویس فیلم و سریال هستید.
+مقادیر موجود در این شیء JSON را به زبان مقصد ({target_lang}) ترجمه کنید.
 
-CRITICAL RULES:
-1. Respond ONLY with a valid JSON object matching exact keys.
-2. Do NOT wrap response in markdown blocks. No explanations.
+قوانین مهم ترجمه:
+۱. ترجمه باید کاملاً روان، طبیعی، عامیانه و متناسب با لحن گفتگوها و دوبله فیلم باشد.
+۲. اصطلاحات، ضرب‌المثل‌ها و کنایه‌ها را به معادلات رایج و ملموس در زبان مقصد ترجمه کنید، نه ترجمه کلمه به کلمه.
+۳. کوتاهی و ایجاز خطوط زیرنویس را حفظ کنید تا خواندن آن روی تصویر آسان باشد.
 
-JSON to translate:
+قوانین فنی حیاتی:
+۱. خروجی باید **دقیقاً و فقط** یک JSON معتبر باشد که کلیدهای آن دقیقاً مشابه کلیدهای ورودی است.
+۲. از آوردن هرگونه توضیح اضافی، مقدمه، مؤخره یا قالب‌بندی‌های Markdown (مثل ```json) اکیداً خودداری کنید.
+
+JSON جهت ترجمه:
 {json.dumps(lines_dict, ensure_ascii=False)}"""
 
             data = {
