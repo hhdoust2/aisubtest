@@ -95,11 +95,13 @@
         button.btn-action:hover { background-color: var(--primary-hover); }
         button.btn-action:disabled { background-color: #4b5563; cursor: not-allowed; }
 
+        /* دکمه‌های دانلود همیشه بالای باکس نمایش قرار می‌گیرند */
         .btn-download {
             background-color: var(--success); display: none; color: white; border: none;
             padding: 14px; font-size: 15px; border-radius: 12px; cursor: pointer; width: 100%;
-            font-weight: bold; margin-top: 10px; text-align: center;
+            font-weight: bold; margin-top: 15px; margin-bottom: 12px; text-align: center;
         }
+        .btn-download:hover { background-color: #059669; }
 
         /* نوار پیشرفت */
         .progress-container { display: none; margin: 20px 0; text-align: right; }
@@ -110,7 +112,21 @@
         .status-box { margin-top: 15px; text-align: center; font-size: 13px; font-weight: 500; }
         .warning-box { background-color: #450a0a; color: #fca5a5; border: 1px solid #991b1b; padding: 10px; border-radius: 8px; font-size: 12px; margin-bottom: 15px; text-align: right; display: none; }
         
-        #outputSrt { background-color: #252525; padding: 10px; border-radius: 8px; direction: ltr; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; display: none; margin-top: 10px; white-space: pre-wrap; }
+        /* باکس مشترک برای نمایش متن زیرنویس */
+        .output-srt-box {
+            background-color: #252525;
+            padding: 12px;
+            border-radius: 8px;
+            direction: ltr;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+            display: none;
+            white-space: pre-wrap;
+            border: 1px solid var(--border-color);
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
@@ -139,8 +155,10 @@
             <div class="progress-status"><span id="progState1">در حال آماده‌سازی...</span><span id="progPerc1">0%</span></div>
             <div class="progress-bar-wrapper"><div class="progress-bar" id="progBar1"></div></div>
         </div>
-        <div id="outputSrt"></div>
+        
+        <!-- ترتیب اولویت: دکمه دانلود بالا، متن پیش‌نمایش زیر آن -->
         <button class="btn-download" id="btnSttDownload">دانلود زیرنویس (SRT) 📥</button>
+        <div class="output-srt-box" id="outputSrt1"></div>
     </div>
 
     <!-- تب ۲: ترجمه با AI -->
@@ -166,7 +184,10 @@
             <div class="progress-status"><span id="progState2">در حال ترجمه دیالوگ‌ها...</span><span id="progPerc2">0%</span></div>
             <div class="progress-bar-wrapper"><div class="progress-bar" id="progBar2"></div></div>
         </div>
+        
+        <!-- ترتیب اولویت: دکمه دانلود بالا، متن پیش‌نمایش زیر آن -->
         <button class="btn-download" id="btnAiDownload">دانلود زیرنویس ترجمه‌شده 📥</button>
+        <div class="output-srt-box" id="outputSrt2"></div>
     </div>
 
     <!-- تب ۳: ترجمه سریع -->
@@ -191,7 +212,10 @@
             <div class="progress-status"><span id="progState3">در حال پردازش...</span><span id="progPerc3">0%</span></div>
             <div class="progress-bar-wrapper"><div class="progress-bar" id="progBar3"></div></div>
         </div>
+
+        <!-- ترتیب اولویت: دکمه دانلود بالا، متن پیش‌نمایش زیر آن -->
         <button class="btn-download" id="btnFastDownload">دانلود زیرنویس ترجمه‌شده 📥</button>
+        <div class="output-srt-box" id="outputSrt3"></div>
     </div>
 
     <!-- تب ۴: تنظیمات -->
@@ -327,7 +351,7 @@
     });
 
     // --- اکشن تب ۱: تبدیل صوت ---
-    let srtResultText = "";
+    let srtResultText1 = "";
     document.getElementById('formStt').addEventListener('submit', function(e) {
         e.preventDefault();
         const apiKey = localStorage.getItem('active_groq_key');
@@ -362,10 +386,13 @@
             if(xhr.status === 200) {
                 const res = JSON.parse(xhr.responseText);
                 if(res.segments) {
-                    srtResultText = convertToSRT(res.segments);
-                    document.getElementById('outputSrt').style.display = 'block';
-                    document.getElementById('outputSrt').innerText = srtResultText;
+                    srtResultText1 = convertToSRT(res.segments);
+                    
+                    // نمایش دکمه دانلود بالا و باکس متن زیر آن
                     document.getElementById('btnSttDownload').style.display = 'block';
+                    document.getElementById('outputSrt1').style.display = 'block';
+                    document.getElementById('outputSrt1').innerText = srtResultText1;
+                    
                     progState.innerText = 'تکمیل شد! 🎉';
                 }
             } else {
@@ -389,17 +416,17 @@
     }
 
     document.getElementById('btnSttDownload').addEventListener('click', function() {
-        const blob = new Blob([srtResultText], { type: 'text/plain' });
+        const blob = new Blob([srtResultText1], { type: 'text/plain;charset=utf-8' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = "subtitle.srt";
         a.click();
     });
 
-    // --- تابع متداول فرستادن فرم‌های ترجمه ---
-    async function handleTranslation(endpoint, fileInputId, langSelectId, containerId, barId, percId, btnDownloadId) {
+    // --- اکشن تب ۲ و ۳: هندل ترجمه‌ها + استخراج متن برای باکس پریویو ---
+    async function handleTranslation(endpoint, fileInputId, langSelectId, containerId, barId, percId, btnDownloadId, outputBoxId) {
         const apiKey = localStorage.getItem('active_groq_key');
-        if(endpoint.includes('ai') && !apiKey) return alert('لطفاً ابتدا کلید API را انتخاب کنید.');
+        if(endpoint.includes('ai') && !apiKey) return alert('لطفاً ابتدا کلید API را در تنظیمات انتخاب کنید.');
 
         const file = document.getElementById(fileInputId).files[0];
         const formData = new FormData();
@@ -419,7 +446,12 @@
             if(!res.ok) throw new Error('خطا در سرور');
 
             progBar.style.width = '100%'; progPerc.innerText = '100%';
-            const blob = await res.blob();
+            
+            // دریافت فایل زیرنویس به‌صورت متن و Blob
+            const srtText = await res.text();
+            const blob = new Blob([srtText], { type: 'text/plain;charset=utf-8' });
+
+            // ۱. نمایش دکمه دانلود (در بالا)
             const btnDown = document.getElementById(btnDownloadId);
             btnDown.style.display = 'block';
             btnDown.onclick = function() {
@@ -428,6 +460,12 @@
                 a.download = `translated_${file.name}`;
                 a.click();
             };
+
+            // ۲. نمایش باکس متن ترجمه‌شده (در زیر دکمه)
+            const outBox = document.getElementById(outputBoxId);
+            outBox.style.display = 'block';
+            outBox.innerText = srtText;
+
         } catch(err) {
             alert('خطا در فرایند ترجمه.');
         }
@@ -435,12 +473,12 @@
 
     document.getElementById('formAi').addEventListener('submit', (e) => {
         e.preventDefault();
-        handleTranslation('/api/translate-ai', 'srtAiFile', 'langAi', 'progContainer2', 'progBar2', 'progPerc2', 'btnAiDownload');
+        handleTranslation('/api/translate-ai', 'srtAiFile', 'langAi', 'progContainer2', 'progBar2', 'progPerc2', 'btnAiDownload', 'outputSrt2');
     });
 
     document.getElementById('formFast').addEventListener('submit', (e) => {
         e.preventDefault();
-        handleTranslation('/api/translate-fast', 'srtFastFile', 'langFast', 'progContainer3', 'progBar3', 'progPerc3', 'btnFastDownload');
+        handleTranslation('/api/translate-fast', 'srtFastFile', 'langFast', 'progContainer3', 'progBar3', 'progPerc3', 'btnFastDownload', 'outputSrt3');
     });
 </script>
 </body>
