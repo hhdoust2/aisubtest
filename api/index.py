@@ -9,49 +9,9 @@ import io
 import os
 
 app = Flask(__name__)
-
-ALLOWED_ORIGINS = [
-    "https://aisubtest.vercel.app",
-]
-CORS(app, origins=ALLOWED_ORIGINS)
+CORS(app)
 
 GROQ_API_KEY_DEFAULT = os.environ.get("GROQ_API_KEY", "")
-
-
-def _fix_segment_timing(result):
-    """
-    مشکل: Whisper گاهی زمان شروع یک segment را زودتر از شروع واقعیِ
-    گفتار تخمین می‌زند، مخصوصاً وقتی قبل از آن segment یک بازه‌ی
-    طولانی سکوت یا موسیقی (بدون کلام) وجود دارد.
-
-    راه‌حل: با استفاده از word-level timestamps، برای هر segment
-    زمان شروعش را با زمان شروع اولین کلمه‌ی واقعی داخل همان segment
-    جایگزین می‌کنیم (اگر آن کلمه دیرتر از segment شروع شده باشد).
-    """
-    words = result.get('words')
-    segments = result.get('segments')
-
-    if not words or not segments:
-        return result
-
-    for seg in segments:
-        seg_start = seg.get('start')
-        seg_end = seg.get('end')
-        if seg_start is None or seg_end is None:
-            continue
-
-        seg_words = [
-            w for w in words
-            if w.get('start') is not None and seg_start - 0.5 <= w['start'] < seg_end
-        ]
-
-        if seg_words:
-            first_word_start = min(w['start'] for w in seg_words)
-            if first_word_start > seg_start:
-                seg['start'] = first_word_start
-
-    return result
-
 
 # ---------------------------------------------------------
 # اندپوئینت ۱: تبدیل صوت به متن / زیرنویس (Whisper)
@@ -86,8 +46,7 @@ def transcribe_aac():
         data = {
             "model": "whisper-large-v3-turbo",
             "temperature": "0.0",
-            "response_format": "verbose_json",
-            "timestamp_granularities[]": ["word"]
+            "response_format": "verbose_json"
         }
         files = {'file': (file.filename, audio_io, 'audio/aac')}
         
@@ -100,8 +59,7 @@ def transcribe_aac():
         )
 
         if response.status_code == 200:
-            result = _fix_segment_timing(response.json())
-            return jsonify(result)
+            return jsonify(response.json())
         else:
             return jsonify({'error': 'خطا در ارتباط با سرور Whisper', 'details': response.text}), response.status_code
 
