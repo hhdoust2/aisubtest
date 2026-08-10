@@ -3,47 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مترجم زیرنویس هوش مصنوعی (Groq)</title>
+    <title>تبدیل صوت به زیرنویس SRT</title>
     <style>
-        :root {
-            --bg-color: #121212; /* پس‌زمینه تیره هماهنگ با پروژه اول */
-            --card-bg: #1e1e1e; /* کارت تیره */
-            --primary: #4f46e5; /* رنگ بنفش دکمه‌ها */
-            --primary-hover: #4338ca;
-            --text-main: #e0e0e0;
-            --text-muted: #a3a3a3;
-            --input-bg: #252525;
-            --border-color: #4b5563;
-        }
-
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
             box-sizing: border-box;
         }
-        .container {
-            background-color: var(--card-bg);
+        .card {
+            background-color: #1e1e1e;
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 500px; /* افزایش جزئی برای همسان‌سازی ظاهر دکمه‌های API */
-        }
-        h2 {
+            max-width: 500px;
             text-align: center;
-            color: #fff;
-            margin-bottom: 25px;
-            font-size: 1.5rem;
         }
+        h2 { color: #fff; margin-bottom: 24px; }
         
-        /* بخش مدیریت API */
+        /* استایل‌های بخش مدیریت APIها */
         .api-manager-box {
             background-color: #252525;
             padding: 15px;
@@ -155,450 +140,513 @@
             border-color: #6b7280;
         }
 
-        .form-group {
-            margin-bottom: 20px;
-            text-align: right;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #a5b4fc; /* رنگ لیبل ملایم هماهنگ با پروژه اول */
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        /* استایل اختصاصی دکمه انتخاب فایل مدرن و هماهنگ */
         .file-input-wrapper {
-            position: relative;
-            text-align: center;
             margin-bottom: 20px;
+            position: relative;
         }
         input[type="file"] {
-            display: none; /* پنهان کردن فیلد زشت پیش‌فرض مرورگر */
+            display: none;
         }
         .custom-file-upload {
             border: 2px dashed #4f46e5;
-            display: block;
-            padding: 18px 20px;
+            display: inline-block;
+            padding: 16px 20px;
             cursor: pointer;
             border-radius: 12px;
-            width: 100%;
-            box-sizing: border-box;
-            background-color: #252525;
-            color: #e0e0e0;
-            font-weight: bold;
-            font-size: 14px;
+            width: 80%;
             transition: all 0.3s;
-            text-align: center;
         }
         .custom-file-upload:hover {
             background-color: #4f46e5;
             color: #fff;
         }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            background-color: var(--input-bg);
-            color: #fff;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-        select option {
-            background-color: var(--input-bg);
-            color: #fff;
-        }
-        button.btn-submit {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--primary);
+        button.submit-btn {
+            background-color: #4f46e5;
             color: white;
             border: none;
-            border-radius: 12px;
+            padding: 14px 28px;
             font-size: 16px;
-            font-weight: bold;
+            border-radius: 12px;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-        button.btn-submit:hover {
-            background-color: var(--primary-hover);
-        }
-        button.btn-submit:disabled {
-            background-color: #4b5563;
-            cursor: not-allowed;
-        }
-        
-        /* استایل‌های نوار پیشرفت تیره */
-        .progress-container {
-            margin-top: 25px;
-            display: none;
-        }
-        .progress-bar-bg {
             width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+        button.submit-btn:hover { background-color: #4338ca; }
+        button.submit-btn:disabled { background-color: #4b5563; cursor: not-allowed; }
+        
+        .download-btn {
+            background-color: #10b981;
+            display: none;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+        .download-btn:hover { background-color: #059669; }
+        
+        /* استایل نوار وضعیت پیشرفت */
+        .progress-container {
+            display: none;
+            margin: 20px 0;
+            text-align: right;
+        }
+        .progress-bar-wrapper {
             background-color: #2d2d2d;
             border-radius: 10px;
             height: 12px;
+            width: 100%;
             overflow: hidden;
+            margin-top: 8px;
         }
-        .progress-bar-fill {
+        .progress-bar {
+            background-color: #4f46e5;
             height: 100%;
             width: 0%;
-            background-color: #10b981; /* نوار پیشرفت سبز جذاب */
-            transition: width 0.4s ease;
+            transition: width 0.1s linear;
             border-radius: 10px;
         }
-        .progress-text {
+        .progress-status {
             display: flex;
             justify-content: space-between;
             font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 8px;
-            font-weight: 500;
+            color: #a3a3a3;
         }
 
-        #status {
-            margin-top: 15px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
+        #output {
+            margin-top: 24px;
+            padding: 15px;
+            background-color: #2d2d2d;
+            border-radius: 10px;
+            text-align: left;
+            direction: ltr;
+            white-space: pre-wrap;
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
         }
-        .success { color: #10b981; }
-        .error { color: #ef4444; }
-        .loading { color: #f59e0b; }
+        .loader {
+            display: none;
+            margin: 20px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .warning-box {
+            display: none;
+            background-color: #450a0a;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            text-align: right;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <h2>مترجم زیرنویس هوش مصنوعی (Groq)</h2>
-    
-    <div class="api-manager-box">
-        <span class="api-manager-title">🔑 مدیریت کلید‌های Groq API</span>
-        <div class="api-input-group">
-            <input type="text" id="apiLabelInput" class="api-label-input" placeholder="مشخصه/نام اکانت">
-            <input type="password" id="apiKeyValueInput" class="api-key-input" placeholder="gsk_...">
-            <button type="button" class="add-api-btn" id="addApiBtn">ثبت</button>
-        </div>
-        <div class="api-selector-group">
-            <select id="apiSelect" class="api-select">
-                <option value="">-- کلید مورد نظر را انتخاب کنید --</option>
-            </select>
-            <button type="button" class="delete-api-btn" id="deleteApiBtn" title="حذف کلید">🗑️</button>
-        </div>
+    <div class="card">
+        <h2>ساخت زیرنویس SRT 🎙️🎬</h2>
         
-        <div class="backup-group">
-            <button type="button" class="backup-btn" id="exportBtn">خروجی کلیدها 📥</button>
-            <button type="button" class="backup-btn" id="importBtn">وارد کردن کلیدها 📤</button>
-            <input type="file" id="importFile" accept=".json" style="display: none;">
+        <div class="warning-box" id="warningBox">
+            ⚠️ <b>حجم فایل صوتی بیش از ۲۵ مگابایت است!</b><br>
+            سرور گراک فایل‌های بزرگتر را قبول نمی‌کند. لطفاً ابتدا فایل را از طریق تلگرام یا سایت‌های فشرده‌سازی صوتی به حالت مونو (Mono) و سبک تبدیل کنید تا حجم آن زیر ۲۵ مگابایت بیاید.
         </div>
+
+        <div class="api-manager-box">
+            <span class="api-manager-title">🔑 مدیریت کلید‌های Groq API</span>
+            <div class="api-input-group">
+                <input type="text" id="apiLabelInput" class="api-label-input" placeholder="مشخصه/نام اکانت">
+                <input type="password" id="apiKeyValueInput" class="api-key-input" placeholder="gsk_...">
+                <button type="button" class="add-api-btn" id="addApiBtn">ثبت</button>
+            </div>
+            <div class="api-selector-group">
+                <select id="apiSelect" class="api-select">
+                    <option value="">-- کلید مورد نظر را انتخاب کنید --</option>
+                </select>
+                <button type="button" class="delete-api-btn" id="deleteApiBtn" title="حذف کلید انتخاب شده">🗑️</button>
+            </div>
+            
+            <div class="backup-group">
+                <button type="button" class="backup-btn" id="exportBtn">خروجی کلیدها 📥</button>
+                <button type="button" class="backup-btn" id="importBtn">وارد کردن کلیدها 📤</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+        </div>
+
+        <form id="uploadForm">
+            <div class="file-input-wrapper">
+                <label for="file-upload" class="custom-file-upload" id="file-label">
+                    انتخاب فایل صوتی فیلم (تا ۲۵ مگابایت)
+                </label>
+                <input id="file-upload" type="file" accept="audio/*" required />
+            </div>
+
+            <button type="submit" class="submit-btn" id="submitBtn">استخراج و ساخت SRT 🚀</button>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-status">
+                    <span id="progressState">در حال آماده‌سازی...</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+
+            <button type="button" id="downloadBtn" class="download-btn">دانلود فایل زیرنویس (SRT) 📥</button>
+        </form>
+        <div class="loader" id="loader"></div>
+        <div id="output"></div>
     </div>
 
-    <form id="uploadForm">
-        <!-- طراحی دکمه انتخابی جدید و شیک مشابه پروژه صوت -->
-        <div class="form-group file-input-wrapper">
-            <label for="srtFile" class="custom-file-upload" id="file-label">
-                انتخاب فایل زیرنویس (SRT) 📄
-            </label>
-            <input type="file" id="srtFile" accept=".srt" required>
-        </div>
+    <script>
+        const fileInput = document.getElementById('file-upload');
+        const fileLabel = document.getElementById('file-label');
+        const form = document.getElementById('uploadForm');
+        const output = document.getElementById('output');
+        const loader = document.getElementById('loader');
+        const submitBtn = document.getElementById('submitBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const warningBox = document.getElementById('warningBox');
 
-        <div class="form-group">
-            <label for="langTo">ترجمه به زبان:</label>
-            <select id="langTo">
-                <option value="fa">فارسی (Persian)</option>
-                <option value="en">انگلیسی (English)</option>
-                <option value="ar">عربی (Arabic)</option>
-                <option value="tr">ترکی (Turkish)</option>
-            </select>
-        </div>
+        // المان‌های جدید مدیریت API
+        const apiLabelInput = document.getElementById('apiLabelInput');
+        const apiKeyValueInput = document.getElementById('apiKeyValueInput');
+        const addApiBtn = document.getElementById('addApiBtn');
+        const apiSelect = document.getElementById('apiSelect');
+        const deleteApiBtn = document.getElementById('deleteApiBtn');
 
-        <button type="submit" id="btnSubmit" class="btn-submit">شروع ترجمه و دانلود</button>
-    </form>
+        // المان‌های جدید پشتیبان‌گیری
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFile = document.getElementById('importFile');
 
-    <div class="progress-container" id="progressContainer">
-        <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressBarFill"></div>
-        </div>
-        <div class="progress-text">
-            <span id="progressPercent">۰%</span>
-            <span>در حال پردازش خطوط فیلم...</span>
-        </div>
-    </div>
+        // متغیرهای نوار پیشرفت
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressState = document.getElementById('progressState');
 
-    <div id="status"></div>
-</div>
+        let srtContent = ""; 
+        let outputFileName = "subtitle"; 
+        let apiKeysList = []; // ذخیره لیست کلیدها به صورت آرایه‌ای از آبجکت‌ها [{label: '', key: ''}]
 
-<script>
-    const apiLabelInput = document.getElementById('apiLabelInput');
-    const apiKeyValueInput = document.getElementById('apiKeyValueInput');
-    const addApiBtn = document.getElementById('addApiBtn');
-    const apiSelect = document.getElementById('apiSelect');
-    const deleteApiBtn = document.getElementById('deleteApiBtn');
-
-    // المان‌های پشتیبان‌گیری
-    const exportBtn = document.getElementById('exportBtn');
-    const importBtn = document.getElementById('importBtn');
-    const importFile = document.getElementById('importFile');
-
-    // المان‌های کنترل فایل و لیبل آن
-    const fileInput = document.getElementById('srtFile');
-    const fileLabel = document.getElementById('file-label');
-
-    let apiKeysList = [];
-
-    // مدیریت پویای تغییر دکمه فایل بعد از انتخاب
-    fileInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            const file = this.files[0];
-            const sizeKb = (file.size / 1024).toFixed(1);
-            fileLabel.textContent = `📄 ${file.name} (${sizeKb} KB)`;
-            fileLabel.style.borderColor = '#10b981'; // تغییر رنگ خط‌چین به سبز موفقیت
-        } else {
-            fileLabel.textContent = 'انتخاب فایل زیرنویس (SRT) 📄';
-            fileLabel.style.borderColor = '#4f46e5';
-        }
-    });
-
-    // ذخیره‌سازی مجزا با کلید اختصاصی groq_translator_keys
-    function loadSavedApiKeys() {
-        const savedKeys = localStorage.getItem('groq_translator_keys');
-        if (savedKeys) {
-            try {
-                apiKeysList = JSON.parse(savedKeys);
-            } catch(e) {
-                apiKeysList = [];
+        // بارگذاری کلیدها از LocalStorage هنگام لود شدن صفحه
+        function loadSavedApiKeys() {
+            const savedKeys = localStorage.getItem('groq_keys_list');
+            if (savedKeys) {
+                try {
+                    apiKeysList = JSON.parse(savedKeys);
+                } catch(e) {
+                    apiKeysList = [];
+                }
             }
-        }
-        updateApiDropdown();
-    }
-
-    function updateApiDropdown() {
-        apiSelect.innerHTML = '<option value="">-- کلید مورد نظر را انتخاب کنید --</option>';
-        apiKeysList.forEach((item) => {
-            const option = document.createElement('option');
-            option.value = item.key;
-            option.textContent = `${item.label} (${item.key.substring(0, 8)}...)`;
-            apiSelect.appendChild(option);
-        });
-
-        const lastSelected = localStorage.getItem('last_selected_groq_key');
-        if (lastSelected) {
-            apiSelect.value = lastSelected;
-        }
-    }
-
-    addApiBtn.addEventListener('click', function() {
-        const label = apiLabelInput.value.trim();
-        const key = apiKeyValueInput.value.trim();
-
-        if (!label || !key) {
-            alert('لطفاً مشخصه و کلید API را وارد کنید.');
-            return;
-        }
-
-        apiKeysList.push({ label: label, key: key });
-        localStorage.setItem('groq_translator_keys', JSON.stringify(apiKeysList));
-        localStorage.setItem('last_selected_groq_key', key);
-
-        apiLabelInput.value = '';
-        apiKeyValueInput.value = '';
-
-        updateApiDropdown();
-        alert('کلید با موفقیت ذخیره و انتخاب شد!');
-    });
-
-    apiSelect.addEventListener('change', function() {
-        localStorage.setItem('last_selected_groq_key', this.value);
-    });
-
-    deleteApiBtn.addEventListener('click', function() {
-        const selectedKey = apiSelect.value;
-        if (!selectedKey) {
-            alert('لطفاً ابتدا کلیدی را برای حذف انتخاب کنید.');
-            return;
-        }
-
-        if (confirm('آیا از حذف این کلید مطمئن هستید؟')) {
-            apiKeysList = apiKeysList.filter(item => item.key !== selectedKey);
-            localStorage.setItem('groq_translator_keys', JSON.stringify(apiKeysList));
-            localStorage.removeItem('last_selected_groq_key');
             updateApiDropdown();
         }
-    });
 
-    // خروجی گرفتن از کلیدها (Export JSON)
-    exportBtn.addEventListener('click', function() {
-        if (apiKeysList.length === 0) {
-            alert('لیست کلیدهای شما خالی است و چیزی برای پشتیبان‌گیری وجود ندارد.');
-            return;
+        // بروزرسانی داینامیک منوی کشویی انتخاب API
+        function updateApiDropdown() {
+            // ابتدا گزینه‌های قبلی را پاک می‌کنیم (به جز گزینه اول)
+            apiSelect.innerHTML = '<option value="">-- کلید مورد نظر را انتخاب کنید --</option>';
+            
+            apiKeysList.forEach((item, index) => {
+                const option = document.createElement('option');
+                option.value = item.key;
+                option.textContent = `${item.label} (${item.key.substring(0, 8)}...)`;
+                apiSelect.appendChild(option);
+            });
+
+            // آخرین کلید انتخاب شده را مجدد در حالت انتخاب قرار می‌دهد
+            const lastSelected = localStorage.getItem('last_selected_api_key');
+            if (lastSelected) {
+                apiSelect.value = lastSelected;
+            }
         }
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(apiKeysList, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", "groq_translator_keys_backup.json");
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-    });
 
-    // شبیه‌سازی کلیک روی فیلد اینپوت فایل پشتیبان
-    importBtn.addEventListener('click', function() {
-        importFile.click();
-    });
+        // رویداد دکمه ثبت API جدید
+        addApiBtn.addEventListener('click', function() {
+            const label = apiLabelInput.value.trim();
+            const key = apiKeyValueInput.value.trim();
 
-    // وارد کردن کلیدها (Import JSON)
-    importFile.addEventListener('change', function() {
-        const file = this.files[0];
-        if (!file) return;
+            if (!label || !key) {
+                alert('لطفاً مشخصه و کلید API را وارد کنید.');
+                return;
+            }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const importedData = JSON.parse(e.target.result);
-                if (Array.isArray(importedData)) {
-                    const isValid = importedData.every(item => item.hasOwnProperty('label') && item.hasOwnProperty('key'));
-                    if (isValid) {
-                        if (confirm(`آیا می‌خواهید تعداد ${importedData.length} کلید جدید را به لیست مترجم اضافه کنید؟`)) {
-                            const existingKeys = apiKeysList.map(item => item.key);
-                            importedData.forEach(item => {
-                                if (!existingKeys.includes(item.key)) {
-                                    apiKeysList.push(item);
-                                }
-                            });
-                            localStorage.setItem('groq_translator_keys', JSON.stringify(apiKeysList));
-                            updateApiDropdown();
-                            alert('کلیدهای مترجم با موفقیت بازیابی و به منو اضافه شدند! 🎉');
+            // اضافه کردن به لیست و ذخیره در LocalStorage
+            apiKeysList.push({ label: label, key: key });
+            localStorage.setItem('groq_keys_list', JSON.stringify(apiKeysList));
+            localStorage.setItem('last_selected_api_key', key);
+
+            // تمیز کردن فیلدها
+            apiLabelInput.value = '';
+            apiKeyValueInput.value = '';
+
+            updateApiDropdown();
+            alert('کلید با موفقیت ذخیره و انتخاب شد!');
+        });
+
+        // ذخیره انتخاب فعلی کاربر هنگام تغییر در منو
+        apiSelect.addEventListener('change', function() {
+            localStorage.setItem('last_selected_api_key', this.value);
+        });
+
+        // حذف کلید انتخاب شده از لیست
+        deleteApiBtn.addEventListener('click', function() {
+            const selectedKey = apiSelect.value;
+            if (!selectedKey) {
+                alert('لطفاً ابتدا کلیدی را برای حذف انتخاب کنید.');
+                return;
+            }
+
+            if (confirm('آیا از حذف این کلید مطمئن هستید؟')) {
+                apiKeysList = apiKeysList.filter(item => item.key !== selectedKey);
+                localStorage.setItem('groq_keys_list', JSON.stringify(apiKeysList));
+                localStorage.removeItem('last_selected_api_key');
+                updateApiDropdown();
+            }
+        });
+
+        // خروجی گرفتن شیک از کلیدها (Export JSON)
+        exportBtn.addEventListener('click', function() {
+            if (apiKeysList.length === 0) {
+                alert('لیست کلیدهای شما خالی است و چیزی برای پشتیبان‌گیری وجود ندارد.');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(apiKeysList, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "groq_audio_keys_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        });
+
+        // شبیه‌سازی کلیک روی فیلد اینپوت فایل پشتیبان
+        importBtn.addEventListener('click', function() {
+            importFile.click();
+        });
+
+        // وارد کردن کلیدها (Import JSON)
+        importFile.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        // اعتبارسنجی اولیه ساختار آبجکت‌های آرایه
+                        const isValid = importedData.every(item => item.hasOwnProperty('label') && item.hasOwnProperty('key'));
+                        if (isValid) {
+                            if (confirm(`آیا می‌خواهید تعداد ${importedData.length} کلید جدید را به لیست اضافه کنید؟`)) {
+                                // ترکیب داده‌های قبلی با داده‌های جدید بدون ایجاد کلیدهای تکراری
+                                const existingKeys = apiKeysList.map(item => item.key);
+                                importedData.forEach(item => {
+                                    if (!existingKeys.includes(item.key)) {
+                                        apiKeysList.push(item);
+                                    }
+                                });
+                                localStorage.setItem('groq_keys_list', JSON.stringify(apiKeysList));
+                                updateApiDropdown();
+                                alert('کلیدها با موفقیت بازیابی و به منو اضافه شدند! 🎉');
+                            }
+                        } else {
+                            alert('فرمت فایل وارد شده نامعتبر است. فایل ساختار کلیدهای استاندارد را ندارد.');
                         }
                     } else {
-                        alert('فرمت فایل وارد شده نامعتبر است. فایل ساختار کلیدهای استاندارد را ندارد.');
+                        alert('ساختار فایل باید به صورت یک آرایه JSON معتبر باشد.');
                     }
-                } else {
-                    alert('ساختار فایل باید به صورت یک آرایه JSON معتبر باشد.');
+                } catch (err) {
+                    alert('خطا در خواندن و تجزیه فایل JSON!');
                 }
-            } catch (err) {
-                alert('خطا در خواندن و تجزیه فایل JSON!');
+                importFile.value = ''; // ریست فیلد آپلود
+            };
+            reader.readAsText(file);
+        });
+
+        // اجرای اولیه بارگذاری
+        loadSavedApiKeys();
+
+
+        fileInput.addEventListener('change', function() {
+            if(this.files && this.files[0]) {
+                const file = this.files[0];
+                const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+                fileLabel.textContent = `${file.name} (${sizeMb} MB)`;
+                
+                const lastDotIndex = file.name.lastIndexOf('.');
+                if (lastDotIndex !== -1) {
+                    outputFileName = file.name.substring(0, lastDotIndex);
+                } else {
+                    outputFileName = file.name;
+                }
+
+                // کنترل حجم فایل
+                if (file.size > 25 * 1024 * 1024) {
+                    fileLabel.style.borderColor = '#ef4444';
+                    warningBox.style.display = 'block';
+                    submitBtn.disabled = true;
+                } else {
+                    fileLabel.style.borderColor = '#10b981';
+                    warningBox.style.display = 'none';
+                    submitBtn.disabled = false;
+                }
             }
-            importFile.value = '';
-        };
-        reader.readAsText(file);
-    });
+        });
 
-    loadSavedApiKeys();
-
-    // هندل ارسال فرم
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const apiKey = apiSelect.value;
-        if (!apiKey) {
-            alert('لطفاً ابتدا یک کلید API وارد یا از منو انتخاب کنید.');
-            return;
+        function formatSRTTime(seconds) {
+            const date = new Date(seconds * 1000);
+            const hh = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const mm = String(date.getUTCMinutes()).padStart(2, '0');
+            const ss = String(date.getUTCSeconds()).padStart(2, '0');
+            const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+            return `${hh}:${mm}:${ss},${ms}`;
         }
 
-        const langTo = document.getElementById('langTo').value;
-        const statusDiv = document.getElementById('status');
-        const btnSubmit = document.getElementById('btnSubmit');
-        
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBarFill = document.getElementById('progressBarFill');
-        const progressPercent = document.getElementById('progressPercent');
+        function convertToSRT(segments) {
+            let srt = "";
+            segments.forEach((segment, index) => {
+                const id = index + 1;
+                const start = formatSRTTime(segment.start);
+                const end = formatSRTTime(segment.end);
+                const text = segment.text.trim();
+                
+                srt += `${id}\n${start} --> ${end}\n${text}\n\n`;
+            });
+            return srt;
+        }
 
-        if (!fileInput.files.length) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const file = fileInput.files[0];
+            const apiKey = apiSelect.value; // استفاده از API انتخاب شده از منو
 
-        const file = fileInput.files[0];
+            if (!file) return;
+            if (!apiKey) {
+                alert('لطفاً ابتدا یک کلید API وارد یا از منو انتخاب کنید.');
+                return;
+            }
+            if (file.size > 25 * 1024 * 1024) return;
 
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            const text = event.target.result;
-            const totalLines = (text.match(/-->/g) || []).length;
-            
-            btnSubmit.disabled = true;
-            statusDiv.className = 'loading';
-            statusDiv.innerText = 'فایل ارسال شد. در حال ترجمه دیالوگ‌ها...';
             progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressPercent.innerText = '0%';
+            progressState.innerText = 'در حال آماده‌سازی فایل صوتی...';
             
-            let currentPercent = 0;
-            progressBarFill.style.width = '0%';
-            progressPercent.innerText = '۰%';
-
-            const estimatedTimeMs = Math.max(totalLines * 40, 3000);
-            const intervalStep = 100;
-            const percentIncrement = (intervalStep / estimatedTimeMs) * 92;
-
-            const progressInterval = setInterval(() => {
-                if (currentPercent < 92) {
-                    currentPercent += percentIncrement;
-                    if (currentPercent > 92) currentPercent = 92;
-                    
-                    const displayPercent = Math.round(currentPercent);
-                    progressBarFill.style.width = `${displayPercent}%`;
-                    progressPercent.innerText = `${displayPercent.toLocaleString('fa-IR')}%`;
-                    
-                    if (displayPercent >= 92) {
-                        document.querySelector('.progress-text span:last-child').innerText = 'در حال بازسازی و دریافت فایل نهایی...';
-                    }
-                }
-            }, intervalStep);
+            output.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            submitBtn.disabled = true;
 
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('to', langTo);
-            formData.append('api_key', apiKey); // ارسال داینامیک کلید به بک‌اند
+            formData.append('model', 'whisper-large-v3-turbo');
+            formData.append('temperature', '0.0');
+            formData.append('response_format', 'verbose_json');
 
-            try {
-                const response = await fetch('/translate-srt', {
-                    method: 'POST',
-                    body: formData
-                });
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'https://aud-totxt-reverse.aialsabela.workers.dev/openai/v1/audio/transcriptions');
+            xhr.setRequestHeader('Authorization', `Bearer ${apiKey}`);
 
-                clearInterval(progressInterval);
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.details || 'خطا در ترجمه فایل');
+            xhr.upload.addEventListener('progress', function(event) {
+                if (event.lengthComputable) {
+                    const percentComplete = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressPercent.innerText = percentComplete + '%';
+                    
+                    if (percentComplete < 100) {
+                        progressState.innerText = 'در حال آپلود فایل صوتی...';
+                    } else {
+                        progressState.innerText = 'آپلود موفق! در حال پردازش هوش مصنوعی گراک...';
+                        loader.style.display = 'block';
+                    }
                 }
+            });
 
-                progressBarFill.style.width = '100%';
-                progressPercent.innerText = '۱۰۰%';
+            xhr.onload = function() {
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.segments) {
+                            srtContent = convertToSRT(data.segments);
+                            
+                            output.innerText = srtContent;
+                            output.style.display = 'block';
+                            output.style.color = '#e0e0e0';
+                            
+                            progressState.innerText = 'عملیات با موفقیت انجام شد! 🎉';
+                            downloadBtn.style.display = 'block';
+                        } else {
+                            throw new Error("ساختار پاسخ فاقد زمان‌بندی صوتی است.");
+                        }
+                    } catch (err) {
+                        output.innerText = "خطا در خواندن پاسخ سرور: " + err.message;
+                        output.style.display = 'block';
+                        output.style.color = '#ef4444';
+                        progressState.innerText = 'خطا در دریافت اطلاعات ❌';
+                    }
+                } else {
+                    let errorMessage = "خطای ناشناخته در سرور رخ داده است.";
+                    try {
+                        const errData = JSON.parse(xhr.responseText);
+                        errorMessage = errData.error?.message || errorMessage;
+                    } catch(e) {}
+                    
+                    output.innerText = "خطای سرور گراک: " + errorMessage;
+                    output.style.display = 'block';
+                    output.style.color = '#ef4444';
+                    progressState.innerText = 'خطا در سرور گراک ❌';
+                }
+            };
 
-                const blob = await response.blob();
-const url = window.URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
+            xhr.onerror = function() {
+                loader.style.display = 'none';
+                submitBtn.disabled = false;
+                output.style.display = 'block';
+                output.innerText = "خطا در شبکه. وضعیت فیلترشکن یا اینترنت خود را بسنجید.";
+                output.style.color = '#ef4444';
+                progressState.innerText = 'خطا در ارتباط شبکه ❌';
+            };
 
-// 🟢 استخراج نام اصلی فایل بدون پسوند srt.
-const outputFileName = file.name.replace(/\.srt$/i, ''); 
-a.download = `${outputFileName}_GrqFa.srt`;
+            xhr.send(formData);
+        });
 
-document.body.appendChild(a);
-a.click();
-a.remove();
-
-
-                statusDiv.className = 'success';
-                statusDiv.innerText = 'ترجمه با موفقیت انجام و فایل دانلود شد!';
-
-            } catch (error) {
-                clearInterval(progressInterval);
-                progressBarFill.style.width = '0%';
-                progressPercent.innerText = '۰%';
-                statusDiv.className = 'error';
-                statusDiv.innerText = 'خطا: ' + error.message;
-            } finally {
-                btnSubmit.disabled = false;
-            }
-        };
-
-        reader.readAsText(file);
-    });
-</script>
-
+        downloadBtn.addEventListener('click', function() {
+            if (!srtContent) return;
+            const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            // تغییر نام فایل دانلودی برای ذخیره در پوشه Adm/SRT
+            a.download = `${outputFileName}.srt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
 </body>
 </html>
