@@ -1,90 +1,33 @@
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
-from deep_translator import GoogleTranslator
 import srt
 import requests
 import json
 import time
-import io
 import os
 
 app = Flask(__name__)
 CORS(app)
 
+# کلید پیش‌فرض (در صورت عدم ارسال از سمت فرانت)
 GROQ_API_KEY_DEFAULT = os.environ.get("GROQ_API_KEY", "")
 
-# ---------------------------------------------------------
-# اندپوئینت ۱: تبدیل صوت به متن / زیرنویس (Whisper)
-# ---------------------------------------------------------
-@app.route('/transcribe-aac', methods=['POST'])
-@app.route('/api/transcribe-aac', methods=['POST'])
-def transcribe_aac():
+@app.route('/translate-srt', methods=['POST'])
+def translate_srt():
     try:
+        # دریافت کلید ارسالی به صورت پویا از فرانت‌اند
         user_api_key = request.form.get('api_key')
         active_api_key = user_api_key if user_api_key else GROQ_API_KEY_DEFAULT
 
         if not active_api_key:
-            return jsonify({'error': 'کلید API Groq یافت نشد.'}), 400
+            return jsonify({'error': 'کلید API یافت نشد. لطفاً ابتدا کلید گراک را در فرانت‌اند وارد و انتخاب کنید.'}), 400
 
         if 'file' not in request.files:
-            return jsonify({'error': 'هیچ فایلی ارسال نشده است.'}), 400
+            return jsonify({'error': 'No file part'}), 400
             
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'error': 'فایلی انتخاب نشده است.'}), 400
-
-        file_bytes = file.read()
-        file_size_mb = len(file_bytes) / (1024 * 1024)
-        
-        if file_size_mb > 25:
-            return jsonify({'error': f'حجم فایل ({file_size_mb:.2f}MB) بیشتر از حد مجاز ۲۵ مگابایت است.'}), 400
-
-        audio_io = io.BytesIO(file_bytes)
-        audio_io.name = file.filename
-
-        headers = {"Authorization": f"Bearer {active_api_key}"}
-        data = {
-            "model": "whisper-large-v3-turbo",
-            "temperature": "0.0",
-            "response_format": "verbose_json"
-        }
-        files = {'file': (file.filename, audio_io, 'audio/aac')}
-        
-        response = requests.post(
-            "https://api.groq.com/openai/v1/audio/transcriptions",
-            headers=headers,
-            data=data,
-            files=files,
-            timeout=120
-        )
-
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            return jsonify({'error': 'خطا در ارتباط با سرور Whisper', 'details': response.text}), response.status_code
-
-    except Exception as e:
-        return jsonify({'error': 'خطای غیرمنتظره رخ داد', 'details': str(e)}), 500
-
-
-# ---------------------------------------------------------
-# اندپوئینت ۲: ترجمه زیرنویس با هوش مصنوعی (Llama 3.3 / Groq)
-# ---------------------------------------------------------
-@app.route('/translate-ai', methods=['POST'])
-@app.route('/api/translate-ai', methods=['POST'])
-def translate_ai():
-    try:
-        user_api_key = request.form.get('api_key')
-        active_api_key = user_api_key if user_api_key else GROQ_API_KEY_DEFAULT
-
-        if not active_api_key:
-            return jsonify({'error': 'کلید API گراک یافت نشد.'}), 400
-
-        if 'file' not in request.files:
-            return jsonify({'error': 'فایل پیدا نشد.'}), 400
-            
-        file = request.files['file']
-        target_lang = request.form.get('to', 'fa')
+            return jsonify({'error': 'No selected file'}), 400
 
         try:
             file_content = file.read().decode('utf-8')
@@ -96,32 +39,53 @@ def translate_ai():
         valid_subs = [sub for sub in subtitles if sub.content.strip()]
         
         batch_size = 20
+        
+        # تنظیم هدر بر اساس کلید ارسال‌شده کاربر
         headers = {
             "Authorization": f"Bearer {active_api_key}",
             "Content-Type": "application/json"
         }
-        groq_url = "https://api.groq.com/openai/v1/chat/completions"
+        
+        groq_url = "https://ai-groq-reverse.aialsabela.workers.dev/openai/v1/chat/completions"
         
         for i in range(0, len(valid_subs), batch_size):
             batch = valid_subs[i:i+batch_size]
-            lines_dict = {str(idx + 1): sub.content.replace('\n', ' ').strip() for idx, sub in enumerate(batch)}
             
-            # پرامپت فارسی حرفه‌ای و بهینه‌سازی‌شده برای ترجمه روان زیرنویس
-            prompt = f"""شما یک مترجم حرفه‌ای زیرنویس فیلم و سریال هستید.
-مقادیر موجود در این شیء JSON را به زبان مقصد ({target_lang}) ترجمه کنید.
+            lines_dict = {}
+            for idx, sub in enumerate(batch):
+                lines_dict[str(idx + 1)] = sub.content.replace('\n', ' ').strip()
+            
+            prompt = f"""
+"""You are an expert Persian movie subtitle translator and professional dubbing scriptwriter.
+Translate the values of the JSON object into natural, fluent, highly conversational Tehrani Persian (فارسی روان، محاوره‌ای و دوبله‌ای).
 
-قوانین مهم ترجمه:
-۱. ترجمه باید کاملاً روان، طبیعی، عامیانه و متناسب با لحن گفتگوها و دوبله فیلم باشد.
-۲. اصطلاحات، ضرب‌المثل‌ها و کنایه‌ها را به معادلات رایج و ملموس در زبان مقصد ترجمه کنید، نه ترجمه کلمه به کلمه.
-۳. کوتاهی و ایجاز خطوط زیرنویس را حفظ کنید تا خواندن آن روی تصویر آسان باشد.
+توجه داشته باش
+شما یک مترجم حرفه‌ای فیلم و سریال هستید.
+متن زیر بخشی از دیالوگ یک اثر ویدیویی/صوتی است. لطفاً آن را به زبان فارسی روان، اصیل و متناسب با لحن سینمایی (عامیانه اما تمیز) ترجمه کنید.
 
-قوانین فنی حیاتی:
-۱. خروجی باید **دقیقاً و فقط** یک JSON معتبر باشد که کلیدهای آن دقیقاً مشابه کلیدهای ورودی است.
-۲. از آوردن هرگونه توضیح اضافی، مقدمه، مؤخره یا قالب‌بندی‌های Markdown (مثل ```json) اکیداً خودداری کنید.
+قواعد مهم:
+۱. از ترجمه لفظ‌به‌لفظ و ماشینی پرهیز کنید.
+۲. اصطلاحات (Idioms) و ضرب‌المثل‌ها را معادل‌سازی سینمایی کنید.
+۳. علائم نگارشی را رعایت کنید.
+۴. فقط و فقط متن ترجمه‌شده را خروجی دهید و هیچ توضیح اضافه، پیش‌گفتار یا پس‌گفتاری ننویسید.
 
-JSON جهت ترجمه:
-{json.dumps(lines_dict, ensure_ascii=False)}"""
+TRANSLATION RULES:
+1. **Natural Dubbing Style:** Translate into smooth, natural spoken Persian as used in modern movie dubbing. Completely avoid formal or written Farsi (e.g., use "می‌ره" instead of "می‌رود", "می‌خوام" instead of "می‌خواهم").
+2. **Accurate Context & Slang:** Use authentic Persian colloquialisms and idioms that fit the exact meaning. Do NOT create awkward, literal, or nonsense phrases.
+3. **Appropriate Tone for Swearing:** Do NOT over-exaggerate swear words. Match the intensity of the source text (e.g., translate "What the hell?" as "این دیگه چه کوفتیه؟" or "این چه مرگشه؟", NOT with harsh explicit profanity unless the original text explicitly uses strong expletives like "fuck" or "shit").
+4. **Concise for Subtitles:** Keep sentences short and punchy so they are easy to read on screen.
 
+CRITICAL FORMAT RULES:
+1. Respond ONLY with a valid JSON object matching the exact keys provided.
+2. Do NOT change the keys (keep them "1", "2", etc.).
+3. Do NOT wrap the response in markdown code blocks (No ```json).
+4. Do NOT add any notes, intros, or explanations.
+
+
+JSON to translate:
+{json.dumps(lines_dict, ensure_ascii=False)}
+"""
+           
             data = {
                 "model": "llama-3.3-70b-versatile",
                 "messages": [{"role": "user", "content": prompt}],
@@ -130,87 +94,44 @@ JSON جهت ترجمه:
             }
             
             try:
-                response = requests.post(groq_url, headers=headers, json=data, timeout=30)
+                response = requests.post(
+                    groq_url,
+                    headers=headers,
+                    json=data,
+                    timeout=30
+                )
+                
                 if response.status_code == 200:
-                    raw_content = response.json()['choices'][0]['message']['content'].strip()
+                    result = response.json()
+                    raw_content = result['choices'][0]['message']['content'].strip()
                     translated_json = json.loads(raw_content)
+                    
                     for idx, sub in enumerate(batch):
                         key = str(idx + 1)
                         if key in translated_json:
                             sub.content = translated_json[key].strip()
-                time.sleep(1.0)
+                else:
+                    print(f"Groq API Error: {response.status_code} - {response.text}")
+                    return jsonify({'error': 'Groq API Error', 'details': f"کد خطا: {response.status_code} - {response.text}"}), 400
+                
+                time.sleep(2.0)
+                
             except Exception as e:
                 print(f"Error in batch {i}: {e}")
                 continue
 
         final_srt = srt.compose(subtitles)
+
         return Response(
             final_srt,
             mimetype="text/srt",
-            headers={"Content-disposition": f"attachment; filename=translated_ai_{file.filename}"}
+            headers={"Content-disposition": f"attachment; filename=translated_{file.filename}"}
         )
 
     except Exception as e:
-        return jsonify({'error': 'ترجمه هوش مصنوعی ناموفق بود', 'details': str(e)}), 500
-
-
-# ---------------------------------------------------------
-# اندپوئینت ۳: ترجمه سریع با Deep Translator
-# ---------------------------------------------------------
-@app.route('/translate-fast', methods=['POST'])
-@app.route('/api/translate-fast', methods=['POST'])
-def translate_fast():
-    try:
-        if 'file' not in request.files:
-            return jsonify({'error': 'فایل یافت نشد.'}), 400
-            
-        file = request.files['file']
-        target_lang = request.form.get('to', 'fa')
-        source_lang = request.form.get('from', 'auto')
-
-        try:
-            file_content = file.read().decode('utf-8')
-        except UnicodeDecodeError:
-            file.seek(0)
-            file_content = file.read().decode('windows-1256', errors='ignore')
-        
-        subtitles = list(srt.parse(file_content))
-        translator = GoogleTranslator(source=source_lang, target=target_lang)
-        valid_subs = [sub for sub in subtitles if sub.content.strip()]
-        
-        batch_size = 30
-        for i in range(0, len(valid_subs), batch_size):
-            batch = valid_subs[i:i+batch_size]
-            separator = "\n---\n"
-            combined_text = separator.join([sub.content for sub in batch])
-            
-            try:
-                translated_combined = translator.translate(combined_text)
-                translated_lines = translated_combined.split("---")
-                for index, sub in enumerate(batch):
-                    if index < len(translated_lines):
-                        sub.content = translated_lines[index].strip()
-            except Exception:
-                for sub in batch:
-                    try:
-                        sub.content = translator.translate(sub.content)
-                    except:
-                        pass
-
-        final_srt = srt.compose(subtitles)
-        return Response(
-            final_srt,
-            mimetype="text/srt",
-            headers={"Content-disposition": f"attachment; filename=translated_fast_{file.filename}"}
-        )
-
-    except Exception as e:
-        return jsonify({'error': 'ترجمه سریع با خطا مواجه شد', 'details': str(e)}), 500
+        return jsonify({'error': 'AI Translation failed', 'details': str(e)}), 500
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):
-    return jsonify({"message": "Unified Audio & Subtitle Processing Engine Active."})
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    return jsonify({"message": "Groq Clean URL Flow is active."})
