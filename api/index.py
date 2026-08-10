@@ -17,7 +17,7 @@ GROQ_API_KEY_DEFAULT = os.environ.get("GROQ_API_KEY", "")
 # اندپوئینت ۱: تبدیل صوت به متن / زیرنویس (Whisper)
 # ---------------------------------------------------------
 @app.route('/transcribe-aac', methods=['POST'])
-@app.route('/api/transcribe-aac', methods=['POST'])
+
 def transcribe_aac():
     try:
         user_api_key = request.form.get('api_key')
