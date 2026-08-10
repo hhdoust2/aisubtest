@@ -1,128 +1,83 @@
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-import srt
 import requests
-import json
-import time
-import os
+import io
+import os  # <-- این کتابخانه را اضافه کن
 
 app = Flask(__name__)
 CORS(app)
 
-# کلید پیش‌فرض (در صورت عدم ارسال از سمت فرانت)
-GROQ_API_KEY_DEFAULT = os.environ.get("GROQ_API_KEY", "")
+# حالا کلید را از متغیر محیطی می‌خوانیم. 
+# اگر روی سیستم خودت بودی و متغیر ست نشده بود، به عنوان مقدار پیش‌فرض کلیدت را بگذار.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "gsk_YOUR_ACTUAL_GROQ_API_KEY_HERE")
 
-@app.route('/translate-srt', methods=['POST'])
-def translate_srt():
+@app.route('/transcribe-aac', methods=['POST'])
+def transcribe_aac():
     try:
-        # دریافت کلید ارسالی به صورت پویا از فرانت‌اند
-        user_api_key = request.form.get('api_key')
-        active_api_key = user_api_key if user_api_key else GROQ_API_KEY_DEFAULT
-
-        if not active_api_key:
-            return jsonify({'error': 'کلید API یافت نشد. لطفاً ابتدا کلید گراک را در فرانت‌اند وارد و انتخاب کنید.'}), 400
-
         if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
+            return jsonify({'error': 'هیچ فایلی ارسال نشده است.'}), 400
             
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'error': 'No selected file'}), 400
+            return jsonify({'error': 'فایلی انتخاب نشده است.'}), 400
 
-        try:
-            file_content = file.read().decode('utf-8')
-        except UnicodeDecodeError:
-            file.seek(0)
-            file_content = file.read().decode('windows-1256', errors='ignore')
+        # خواندن فایل صوتی به صورت بایت در حافظه (بدون ذخیره روی هارد دیسک)
+        file_bytes = file.read()
+        file_size_mb = len(file_bytes) / (1024 * 1024)
         
-        subtitles = list(srt.parse(file_content))
-        valid_subs = [sub for sub in subtitles if sub.content.strip()]
-        
-        batch_size = 20
-        
-        # تنظیم هدر بر اساس کلید ارسال‌شده کاربر
+        # اگر فایل همچنان بزرگتر از حد مجاز Groq (۲۵ مگابایت) بود
+        if file_size_mb > 25:
+            return jsonify({
+                'error': f'حجم فایل ({file_size_mb:.2f}MB) بیشتر از حد مجاز ۲۵ مگابایت Groq است. لطفاً ابتدا آن را فشرده کنید.'
+            }), 400
+
+        # ایجاد یک فایل مجازی در حافظه موقت برای ارسال به Groq
+        audio_io = io.BytesIO(file_bytes)
+        audio_io.name = file.filename
+
         headers = {
-            "Authorization": f"Bearer {active_api_key}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {GROQ_API_KEY}"
         }
         
-        groq_url = "https://ai-groq-reverse.aialsabela.workers.dev/openai/v1/chat/completions"
+        data = {
+            "model": "whisper-large-v3-turbo",
+            "temperature": "0.0",
+            "response_format": "json"
+        }
+
+        files = {
+            'file': (file.filename, audio_io, 'audio/aac')
+        }
         
-        for i in range(0, len(valid_subs), batch_size):
-            batch = valid_subs[i:i+batch_size]
-            
-            lines_dict = {}
-            for idx, sub in enumerate(batch):
-                lines_dict[str(idx + 1)] = sub.content.replace('\n', ' ').strip()
-            
-            prompt = f""شما یک مترجم حرفه‌ای زیرنویس فیلم و سریال و نویسندهٔ باتجربهٔ متن دوبله هستید.
-مقادیر داخل آبجکت JSON زیر را به فارسی روان، محاوره‌ای و طبیعی (لحن دوبلهٔ تهرانی) ترجمه کنید.
-
-قواعد ترجمه:
-۱. **لحن طبیعی و محاوره‌ای:** ترجمه باید کاملاً محاوره‌ای و طبیعی باشد، دقیقاً مثل چیزی که در دوبلهٔ حرفه‌ای فیلم می‌شنوید. از فارسی رسمی/کتابی کاملاً پرهیز کنید (مثلاً «می‌ره» به‌جای «می‌رود»، «می‌خوام» به‌جای «می‌خواهم»).
-۲. **دقت در معنا و اصطلاحات:** از اصطلاحات، ضرب‌المثل‌ها و زبان عامیانهٔ اصیل فارسی استفاده کنید که دقیقاً معادل معنایی متن اصلی باشد. جمله‌های عجیب، ترجمهٔ لفظ‌به‌لفظ یا بی‌معنی نسازید.
-۳. **لحن متناسب برای فحش/ناسزا:** شدت فحش را اغراق نکنید و دقیقاً متناسب با شدت متن اصلی ترجمه کنید (مثلاً "What the hell?" را به «این دیگه چه کوفتیه؟» یا «این چه مرگشه؟» ترجمه کنید، نه با ناسزای رکیک، مگر این‌که متن اصلی صریحاً از کلمات رکیک قوی استفاده کرده باشد).
-۴. **کوتاه و مناسب زیرنویس:** جمله‌ها را کوتاه و قابل‌خواندن روی صفحه نگه دارید. علائم نگارشی را به‌شکل طبیعی حفظ کنید.
-
-قواعد حیاتی فرمت خروجی:
-۱. فقط و فقط یک آبجکت JSON معتبر با همان کلیدهای داده‌شده برگردانید.
-۲. کلیدها را عوض نکنید (همان "1", "2" و... باقی بمانند).
-۳. پاسخ را داخل بلوک کد مارک‌داون نگذارید (بدون ```json).
-۴. هیچ توضیح، مقدمه یا جملهٔ اضافه‌ای ننویسید — فقط خودِ JSON.
-
-این JSON را ترجمه کن:
-{payload}
-
-JSON to translate:
-{json.dumps(lines_dict, ensure_ascii=False)}
-"""
-           
-            data = {
-                "model": "llama-3.3-70b-versatile",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.3,
-                "response_format": {"type": "json_object"}
-            }
-            
-            try:
-                response = requests.post(
-                    groq_url,
-                    headers=headers,
-                    json=data,
-                    timeout=30
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    raw_content = result['choices'][0]['message']['content'].strip()
-                    translated_json = json.loads(raw_content)
-                    
-                    for idx, sub in enumerate(batch):
-                        key = str(idx + 1)
-                        if key in translated_json:
-                            sub.content = translated_json[key].strip()
-                else:
-                    print(f"Groq API Error: {response.status_code} - {response.text}")
-                    return jsonify({'error': 'Groq API Error', 'details': f"کد خطا: {response.status_code} - {response.text}"}), 400
-                
-                time.sleep(2.0)
-                
-            except Exception as e:
-                print(f"Error in batch {i}: {e}")
-                continue
-
-        final_srt = srt.compose(subtitles)
-
-        return Response(
-            final_srt,
-            mimetype="text/srt",
-            headers={"Content-disposition": f"attachment; filename=translated_{file.filename}"}
+        # فرستادن مستقیم فایل از رم به Groq
+        response = requests.post(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            headers=headers,
+            data=data,
+            files=files,
+            timeout=60
         )
 
-    except Exception as e:
-        return jsonify({'error': 'AI Translation failed', 'details': str(e)}), 500
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'text': response.json().get('text', '')
+            })
+        else:
+            return jsonify({
+                'error': 'خطا در ارتباط با سرور Whisper',
+                'details': response.text
+            }), response.status_code
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def catch_all(path):
-    return jsonify({"message": "Groq Clean URL Flow is active."})
+    except Exception as e:
+        return jsonify({'error': 'خطای غیرمنتظره رخ داد', 'details': str(e)}), 500
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "status": "active",
+        "message": "Whisper Speech-to-Text API is running successfully!"
+    })
+# برای اجرا روی سیستم محلی در حین تست
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)
