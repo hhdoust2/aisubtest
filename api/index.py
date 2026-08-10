@@ -11,7 +11,7 @@ import os
 app = Flask(__name__)
 
 ALLOWED_ORIGINS = [
-    "https://grq-translat.vercel.app",
+    "https://aisubtest.vercel.app",
 ]
 CORS(app, origins=ALLOWED_ORIGINS)
 
