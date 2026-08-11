@@ -17,7 +17,7 @@ GROQ_API_KEY_DEFAULT = os.environ.get("GROQ_API_KEY", "")
 # اندپوئینت ۱: تبدیل صوت به متن / زیرنویس (Whisper)
 # ---------------------------------------------------------
 @app.route('/transcribe-aac', methods=['POST'])
-
+@app.route('/api/transcribe-aac', methods=['POST'])
 def transcribe_aac():
     try:
         user_api_key = request.form.get('api_key')
@@ -46,7 +46,7 @@ def transcribe_aac():
         data = {
             "model": "whisper-large-v3-turbo",
             "temperature": "0.0",
-            "response_format": "json"
+            "response_format": "verbose_json"
         }
         files = {'file': (file.filename, audio_io, 'audio/aac')}
         
