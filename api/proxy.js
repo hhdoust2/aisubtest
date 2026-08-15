@@ -1,10 +1,13 @@
-// Vercel serverless function (Node 18+ runtime assumed).
+// Vercel serverless function with extra debug logging.
 // مسیر: /api/proxy
-// این فایل را در ریشهٔ پروژه داخل پوشه‌ی `api/` قرار دهید.
+// این فایل را در ریشهٔ پروژه داخل پوشهٔ `api/` قرار دهید.
 // روی Vercel: متغیر محیطی API_KEY را در Settings پروژه قرار دهید.
 export default async function handler(req, res) {
-  // اجازهٔ CORS برای تست محلی/مرورگر (اگر فرانت‌اند شما از همان دامنه لود می‌شود، مشکلی نیست).
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Set CORS dynamically to the request origin to avoid browser blocking in browsers
+  const origin = req.headers['origin'] || req.headers['referer'] || '*';
+  // For safety, if origin is undefined or 'null', fallback to '*'
+  const allowOrigin = origin && origin !== 'null' ? origin : '*';
+  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -13,11 +16,13 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
+    console.log('[proxy] Method not allowed:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const API_KEY = process.env.API_KEY;
   if (!API_KEY) {
+    console.log('[proxy] Missing API_KEY in env');
     return res.status(500).json({ error: 'Server missing API_KEY environment variable' });
   }
 
@@ -26,7 +31,18 @@ export default async function handler(req, res) {
   const model = body.model;
   const messages = body.messages;
 
+  console.log('[proxy] Incoming request. origin=', req.headers['origin'] || req.headers['host'], 'target=', target);
+  console.log('[proxy] Model=', model);
+  // Log a trimmed preview of messages for debugging (avoid logging huge payloads)
+  try {
+    const preview = JSON.stringify(messages ? messages.slice(0,5) : []);
+    console.log('[proxy] Messages preview=', preview);
+  } catch (e) {
+    console.log('[proxy] Could not stringify messages preview', e);
+  }
+
   if (!model || !messages) {
+    console.log('[proxy] Bad request: missing model or messages');
     return res.status(400).json({ error: 'Missing required fields: model and messages' });
   }
 
@@ -41,14 +57,21 @@ export default async function handler(req, res) {
     });
 
     const text = await r.text();
+
+    console.log('[proxy] Upstream status=', r.status);
+    // Log upstream response body truncated to reasonable length
+    const truncated = text && text.length > 1000 ? text.slice(0,1000) + '... [truncated]' : text;
+    console.log('[proxy] Upstream response (truncated)=', truncated);
+
     try {
       const json = JSON.parse(text);
-      res.status(r.status).json(json);
+      return res.status(r.status).json(json);
     } catch (e) {
-      res.status(r.status).send(text);
+      // not JSON
+      return res.status(r.status).send(text);
     }
   } catch (err) {
-    console.error('proxy error', err);
-    res.status(500).json({ error: String(err) });
+    console.error('[proxy] Fetch error:', err);
+    return res.status(500).json({ error: String(err) });
   }
 }
