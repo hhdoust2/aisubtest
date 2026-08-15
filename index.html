@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fa">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chat UI — Tabitoken proxy</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto;max-width:900px;margin:20px auto;padding:10px;direction:rtl}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+    input[type=text], input[type=password], select{padding:8px;border:1px solid #ccc;border-radius:6px;width:100%}
+    .col{flex:1;min-width:220px}
+    #chat{border:1px solid #ddd;border-radius:8px;padding:12px;min-height:300px;overflow:auto;background:#fafafa}
+    .msg{margin:8px 0;padding:10px;border-radius:8px;max-width:80%;}
+    .user{background:#e6f7ff;margin-left:auto}
+    .assistant{background:#fff;border:1px solid #eee}
+    #composer{display:flex;gap:8px;margin-top:8px}
+    textarea{flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;min-height:70px}
+    button{padding:8px 14px;border-radius:6px;border:none;background:#0366d6;color:#fff;cursor:pointer}
+    .small{font-size:12px;color:#666;margin-top:6px}
+    .row{display:flex;gap:8px;align-items:center}
+    label{font-size:13px;color:#333}
+  </style>
+</head>
+<body>
+  <h2>رابط چت (Tabitoken)</h2>
+
+  <div class="controls">
+    <div class="col">
+      <label>Endpoint (برای پراکسی Vercel از /api/proxy استفاده کنید)</label>
+      <input id="endpoint" type="text" value="/api/proxy" />
+    </div>
+    <div class="col">
+      <label>Model</label>
+      <input id="model" type="text" value="claude-opus-5-thinking" />
+    </div>
+    <div class="col">
+      <label>API Key (فقط برای تست محلی؛ در Vercel از متغیر محیطی استفاده کنید)</label>
+      <input id="apiKey" type="password" placeholder="فقط برای تست لوکال" />
+    </div>
+  </div>
+
+  <div id="chat" aria-live="polite"></div>
+
+  <div id="composer">
+    <textarea id="input" placeholder="پیام خود را اینجا بنویسید..."></textarea>
+    <div style="display:flex;flex-direction:column">
+      <button id="sendBtn">ارسال</button>
+      <button id="clearBtn" style="margin-top:8px;background:#6c757d">پاک کردن</button>
+    </div>
+  </div>
+
+  <div class="small">
+    هشدار: کلید API را در کد کلاینت عمومی قرار ندهید. برای تولید از پراکسی سرور یا متغیرهای محیطی Vercel استفاده کنید.
+  </div>
+
+  <script>
+    const chatEl = document.getElementById('chat');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const endpointEl = document.getElementById('endpoint');
+    const modelEl = document.getElementById('model');
+    const apiKeyEl = document.getElementById('apiKey');
+
+    let messages = [];
+
+    function renderMessages() {
+      chatEl.innerHTML = '';
+      messages.forEach(m => {
+        if (m.role === 'system') return; // مخفی کردن system از لیست نمایش (در صورت تمایل بردارید)
+        const d = document.createElement('div');
+        d.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+        d.textContent = m.content;
+        chatEl.appendChild(d);
+      });
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      const endpoint = endpointEl.value.trim() || '/api/proxy';
+      const model = modelEl.value.trim() || 'claude-opus-5-thinking';
+      const apiKey = apiKeyEl.value.trim();
+
+      messages.push({ role: 'user', content: text });
+      renderMessages();
+      inputEl.value = '';
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'در حال ارسال...';
+
+      try {
+        const payload = { model, messages: messages.filter(m => m.role !== 'system') };
+
+        // اگر endpoint شروع با http یا https بود، درخواست مستقیم به آن فرستاده می‌شود
+        const isAbsolute = endpoint.startsWith('http://') || endpoint.startsWith('https://');
+        const url = isAbsolute ? endpoint : endpoint;
+
+        const headers = { 'Content-Type': 'application/json' };
+        // فقط در حالت ارسال مستقیم به endpoint و وارد بودن apiKey، Authorization اضافه می‌شود
+        if (isAbsolute && apiKey) headers['Authorization'] = apiKey.startsWith('Bearer') ? apiKey : 'Bearer ' + apiKey;
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+          mode: 'cors'
+        });
+
+        const textResp = await resp.text();
+        let data;
+        try { data = JSON.parse(textResp); } catch (_) { data = textResp; }
+
+        let assistantText = '';
+
+        if (typeof data === 'string') {
+          assistantText = data;
+        } else if (data) {
+          // سازگاری با ساختارهای مختلف پاسخ
+          if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
+            assistantText = data.choices[0].message.content;
+          } else if (data.choices && data.choices[0] && (data.choices[0].text || data.choices[0].content)) {
+            assistantText = data.choices[0].text || data.choices[0].content;
+          } else if (data.output && Array.isArray(data.output) && data.output[0] && data.output[0].content) {
+            assistantText = data.output[0].content;
+          } else if (data.message && data.message.content) {
+            assistantText = data.message.content;
+          } else {
+            assistantText = JSON.stringify(data, null, 2);
+          }
+        } else {
+          assistantText = 'پاسخ غیرقابل خواندن از سرور';
+        }
+
+        messages.push({ role: 'assistant', content: assistantText });
+        renderMessages();
+
+      } catch (err) {
+        console.error(err);
+        messages.push({ role: 'assistant', content: 'خطا در ارتباط: ' + (err.message || err) });
+        renderMessages();
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'ارسال';
+      }
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        sendMessage();
+      }
+    });
+    clearBtn.addEventListener('click', () => { messages = []; renderMessages(); });
+
+    messages.push({ role: 'system', content: 'شما در یک رابط چت ساده هستید.' });
+    renderMessages();
+  </script>
+</body>
+</html>
