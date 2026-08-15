@@ -1,5 +1,0 @@
-Flask==3.0.2
-Flask-CORS==4.0.0
-srt==3.5.3
-requests==2.31.0
-deep-translator==1.11.4
