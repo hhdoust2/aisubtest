@@ -3,11 +3,8 @@
 // این فایل را در ریشهٔ پروژه داخل پوشهٔ `api/` قرار دهید.
 // روی Vercel: متغیر محیطی API_KEY را در Settings پروژه قرار دهید.
 export default async function handler(req, res) {
-  // Set CORS dynamically to the request origin to avoid browser blocking in browsers
-  const origin = req.headers['origin'] || req.headers['referer'] || '*';
-  // For safety, if origin is undefined or 'null', fallback to '*'
-  const allowOrigin = origin && origin !== 'null' ? origin : '*';
-  res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+  // For debugging, allow any origin (replace '*' with your site in production)
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -31,9 +28,8 @@ export default async function handler(req, res) {
   const model = body.model;
   const messages = body.messages;
 
-  console.log('[proxy] Incoming request. origin=', req.headers['origin'] || req.headers['host'], 'target=', target);
+  console.log('[proxy] Incoming request. host=', req.headers['host'], 'target=', target);
   console.log('[proxy] Model=', model);
-  // Log a trimmed preview of messages for debugging (avoid logging huge payloads)
   try {
     const preview = JSON.stringify(messages ? messages.slice(0,5) : []);
     console.log('[proxy] Messages preview=', preview);
@@ -59,7 +55,6 @@ export default async function handler(req, res) {
     const text = await r.text();
 
     console.log('[proxy] Upstream status=', r.status);
-    // Log upstream response body truncated to reasonable length
     const truncated = text && text.length > 1000 ? text.slice(0,1000) + '... [truncated]' : text;
     console.log('[proxy] Upstream response (truncated)=', truncated);
 
@@ -67,7 +62,6 @@ export default async function handler(req, res) {
       const json = JSON.parse(text);
       return res.status(r.status).json(json);
     } catch (e) {
-      // not JSON
       return res.status(r.status).send(text);
     }
   } catch (err) {

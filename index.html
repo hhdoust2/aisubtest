@@ -44,8 +44,8 @@
   <div id="composer">
     <textarea id="input" placeholder="پیام خود را اینجا بنویسید..."></textarea>
     <div style="display:flex;flex-direction:column">
-      <button id="sendBtn">ارسال</button>
-      <button id="clearBtn" style="margin-top:8px;background:#6c757d">پاک کردن</button>
+      <button id="sendBtn" type="button">ارسال</button>
+      <button id="clearBtn" style="margin-top:8px;background:#6c757d" type="button">پاک کردن</button>
     </div>
   </div>
 
@@ -107,7 +107,9 @@
           mode: 'cors'
         });
 
+        console.log('fetch status', resp.status, resp.statusText);
         const textResp = await resp.text();
+        console.log('raw response text:', textResp);
         let data;
         try { data = JSON.parse(textResp); } catch (_) { data = textResp; }
 
@@ -147,6 +149,11 @@
 
     sendBtn.addEventListener('click', sendMessage);
     inputEl.addEventListener('keydown', (e) => {
+      // جلوگیری از submit فرم با Enter و ارسال تنها با Ctrl+Enter یا Cmd+Enter
+      if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        return;
+      }
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         sendMessage();
       }
