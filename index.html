@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chat UI — Tabitoken proxy</title>
-  <!-- deploy-timestamp: 2026-08-15T06:12:00Z -->
+  <title>Chat UI — Tabitoken proxy / Direct</title>
+  <!-- deploy-timestamp: 2026-08-15T06:25:18Z -->
   <style>
     body{font-family:system-ui,Segoe UI,Roboto;max-width:900px;margin:20px auto;padding:10px;direction:rtl}
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -20,6 +20,7 @@
     .small{font-size:12px;color:#666;margin-top:6px}
     .row{display:flex;gap:8px;align-items:center}
     label{font-size:13px;color:#333}
+    code{background:#f1f1f1;padding:2px 6px;border-radius:4px}
   </style>
 </head>
 <body>
@@ -27,8 +28,16 @@
 
   <div class="controls">
     <div class="col">
+      <label>Endpoint (برای تست مستقیم)</label>
+      <input id="endpoint" type="text" value="https://tabitoken.com/v1/chat/completions" />
+    </div>
+    <div class="col">
       <label>Model</label>
       <input id="model" type="text" value="claude-opus-5-thinking" />
+    </div>
+    <div class="col">
+      <label>API Key (برای تست مستقیم: فقط برای تست موقتی، خطر امنیتی دارد)</label>
+      <input id="apiKey" type="password" placeholder="Bearer sk-... یا فقط کلید را وارد کنید" />
     </div>
   </div>
 
@@ -43,7 +52,7 @@
   </div>
 
   <div class="small">
-    توضیح: Endpoint به‌صورت داخلی روی <code>/api/proxy</code> قفل شده است و کلید API باید در متغیر محیطی Vercel با نام <code>API_KEY</code> تنظیم شود. برای تست محلی از server.js و endpoint <code>http://localhost:3000/proxy</code> استفاده کنید.
+    هشدار امنیتی: وارد کردن API Key در کلاینت (مرورگر) ناامن است و برای تست‌های موقت مجاز است، اما در محیط تولید از پراکسی و متغیرهای محیطی استفاده کنید.
   </div>
 
   <script>
@@ -51,11 +60,11 @@
     const inputEl = document.getElementById('input');
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const endpointEl = document.getElementById('endpoint');
     const modelEl = document.getElementById('model');
+    const apiKeyEl = document.getElementById('apiKey');
 
-    // Force endpoint to the serverless proxy to avoid direct calls to external API from browser
-    const DEFAULT_ENDPOINT = '/api/proxy';
-
+    // By default use the direct Tabitoken endpoint (as requested). You can switch to /api/proxy if desired.
     let messages = [];
 
     function renderMessages() {
@@ -73,8 +82,9 @@
     async function sendMessage() {
       const text = inputEl.value.trim();
       if (!text) return;
-      const endpoint = DEFAULT_ENDPOINT;
+      const endpoint = endpointEl.value.trim();
       const model = modelEl.value.trim() || 'claude-opus-5-thinking';
+      const apiKey = apiKeyEl.value.trim();
 
       messages.push({ role: 'user', content: text });
       renderMessages();
@@ -85,9 +95,12 @@
       try {
         const payload = { model, messages: messages.filter(m => m.role !== 'system') };
 
+        const headers = { 'Content-Type': 'application/json' };
+        if (apiKey) headers['Authorization'] = apiKey.startsWith('Bearer') ? apiKey : 'Bearer ' + apiKey;
+
         const resp = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(payload),
           mode: 'cors'
         });
