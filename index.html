@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Chat UI — Tabitoken proxy</title>
+  <!-- deploy-timestamp: 2026-08-15T06:12:00Z -->
   <style>
     body{font-family:system-ui,Segoe UI,Roboto;max-width:900px;margin:20px auto;padding:10px;direction:rtl}
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -26,16 +27,8 @@
 
   <div class="controls">
     <div class="col">
-      <label>Endpoint (برای پراکسی Vercel از /api/proxy استفاده کنید)</label>
-      <input id="endpoint" type="text" value="/api/proxy" />
-    </div>
-    <div class="col">
       <label>Model</label>
       <input id="model" type="text" value="claude-opus-5-thinking" />
-    </div>
-    <div class="col">
-      <label>API Key (فقط برای تست محلی؛ در Vercel از متغیر محیطی استفاده کنید)</label>
-      <input id="apiKey" type="password" placeholder="فقط برای تست لوکال" />
     </div>
   </div>
 
@@ -50,7 +43,7 @@
   </div>
 
   <div class="small">
-    هشدار: کلید API را در کد کلاینت عمومی قرار ندهید. برای تولید از پراکسی سرور یا متغیرهای محیطی Vercel استفاده کنید.
+    توضیح: Endpoint به‌صورت داخلی روی <code>/api/proxy</code> قفل شده است و کلید API باید در متغیر محیطی Vercel با نام <code>API_KEY</code> تنظیم شود. برای تست محلی از server.js و endpoint <code>http://localhost:3000/proxy</code> استفاده کنید.
   </div>
 
   <script>
@@ -58,16 +51,17 @@
     const inputEl = document.getElementById('input');
     const sendBtn = document.getElementById('sendBtn');
     const clearBtn = document.getElementById('clearBtn');
-    const endpointEl = document.getElementById('endpoint');
     const modelEl = document.getElementById('model');
-    const apiKeyEl = document.getElementById('apiKey');
+
+    // Force endpoint to the serverless proxy to avoid direct calls to external API from browser
+    const DEFAULT_ENDPOINT = '/api/proxy';
 
     let messages = [];
 
     function renderMessages() {
       chatEl.innerHTML = '';
       messages.forEach(m => {
-        if (m.role === 'system') return; // مخفی کردن system از لیست نمایش (در صورت تمایل بردارید)
+        if (m.role === 'system') return; // مخفی کردن system از لیست نمایش
         const d = document.createElement('div');
         d.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
         d.textContent = m.content;
@@ -79,9 +73,8 @@
     async function sendMessage() {
       const text = inputEl.value.trim();
       if (!text) return;
-      const endpoint = endpointEl.value.trim() || '/api/proxy';
+      const endpoint = DEFAULT_ENDPOINT;
       const model = modelEl.value.trim() || 'claude-opus-5-thinking';
-      const apiKey = apiKeyEl.value.trim();
 
       messages.push({ role: 'user', content: text });
       renderMessages();
@@ -92,17 +85,9 @@
       try {
         const payload = { model, messages: messages.filter(m => m.role !== 'system') };
 
-        // اگر endpoint شروع با http یا https بود، درخواست مستقیم به آن فرستاده می‌شود
-        const isAbsolute = endpoint.startsWith('http://') || endpoint.startsWith('https://');
-        const url = isAbsolute ? endpoint : endpoint;
-
-        const headers = { 'Content-Type': 'application/json' };
-        // فقط در حالت ارسال مستقیم به endpoint و وارد بودن apiKey، Authorization اضافه می‌شود
-        if (isAbsolute && apiKey) headers['Authorization'] = apiKey.startsWith('Bearer') ? apiKey : 'Bearer ' + apiKey;
-
-        const resp = await fetch(url, {
+        const resp = await fetch(endpoint, {
           method: 'POST',
-          headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
           mode: 'cors'
         });
@@ -118,7 +103,6 @@
         if (typeof data === 'string') {
           assistantText = data;
         } else if (data) {
-          // سازگاری با ساختارهای مختلف پاسخ
           if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
             assistantText = data.choices[0].message.content;
           } else if (data.choices && data.choices[0] && (data.choices[0].text || data.choices[0].content)) {
@@ -127,6 +111,8 @@
             assistantText = data.output[0].content;
           } else if (data.message && data.message.content) {
             assistantText = data.message.content;
+          } else if (data.error) {
+            assistantText = 'خطا: ' + (data.error.message || data.error);
           } else {
             assistantText = JSON.stringify(data, null, 2);
           }
