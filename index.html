@@ -6,12 +6,14 @@
     <title>مدیریت صوت و ترجمه فیلم 🎙️🤖</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="card">
+        <div class="film-strip" aria-hidden="true"></div>
         <div class="card-header">
+            <span class="eyebrow">AI SUBTITLE STUDIO</span>
             <h2>مدیریت صوت و هوش مصنوعی NC 🎙️🤖</h2>
             <div class="main-tabs">
                 <button type="button" class="main-tab-btn active" id="mainTabProcess">پردازش صوت 🎙️</button>
@@ -30,7 +32,7 @@
 
                 <div class="process-config">
                     <div class="section-box">
-                        <span class="section-title" style="color: #34d399;">🎙️ بخش تبدیل صوت (Whisper)</span>
+                        <span class="section-title tag-rec">🎙️ بخش تبدیل صوت (Whisper)</span>
                         <div style="margin-bottom: 8px;">
                             <label for="assignWhisperSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">انتخاب پروایدر صوت:</label>
                             <select id="assignWhisperSelect"><option value="">-- انتخاب پروایدر --</option></select>
@@ -42,7 +44,7 @@
 
                         <hr style="border: 0; border-top: 1px solid #374151; margin: 12px 0;">
 
-                        <span class="section-title" style="color: #818cf8;">🌐 بخش ترجمه با مدل هوش مصنوعی</span>
+                        <span class="section-title tag-translate">🌐 بخش ترجمه با مدل هوش مصنوعی</span>
                         <div style="margin-bottom: 8px;">
                             <label for="assignTranslateSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">انتخاب پروایدر و مدل ترجمه:</label>
                             <select id="assignTranslateSelect"><option value="">-- انتخاب پروایدر --</option></select>
@@ -72,14 +74,14 @@
 
                         <div class="translate-box" style="margin-bottom: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="googleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <input type="checkbox" id="googleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #d9a54f;">
                                 <span>🌍 ترجمه زیرنویس به فارسی با گوگل ترنسلیت (پس‌زمینه)</span>
                             </label>
                         </div>
 
                         <div class="translate-box" style="margin-bottom: 15px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="translateCheckbox" checked style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <input type="checkbox" id="translateCheckbox" checked style="width: 16px; height: 16px; accent-color: #d9a54f;">
                                 <span>🌐 ترجمه هوشمند زیرنویس به فارسی با مدل انتخاب‌شده</span>
                             </label>
                         </div>
@@ -110,7 +112,7 @@
             <div id="tabContentTranslate" class="tab-content">
                 <div class="process-config">
                     <div class="section-box">
-                        <span class="section-title" style="color: #818cf8;">🌐 انتخاب پروایدر، مدل و کلید ترجمه</span>
+                        <span class="section-title tag-translate">🌐 انتخاب پروایدر، مدل و کلید ترجمه</span>
                         <div style="margin-bottom: 8px;">
                             <label for="srtProviderSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">۱. انتخاب پروایدر:</label>
                             <select id="srtProviderSelect"><option value="">-- انتخاب پروایدر --</option></select>
@@ -144,14 +146,14 @@
 
                         <div class="translate-box" style="margin-bottom: 8px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="srtGoogleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <input type="checkbox" id="srtGoogleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #d9a54f;">
                                 <span>🌍 ترجمه به فارسی با گوگل ترنسلیت (پس‌زمینه)</span>
                             </label>
                         </div>
 
                         <div class="translate-box" style="margin-bottom: 15px;">
                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="srtAiTranslateCheckbox" checked style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <input type="checkbox" id="srtAiTranslateCheckbox" checked style="width: 16px; height: 16px; accent-color: #d9a54f;">
                                 <span>🌐 ترجمه هوشمند با مدل انتخاب‌شده</span>
                             </label>
                         </div>
@@ -203,7 +205,7 @@
 
                     <hr style="border: 0; border-top: 1px solid #374151; margin: 12px 0;">
 
-                    <span class="section-title" style="color: #fca5a5;">🗑️ حذف کلید API</span>
+                    <span class="section-title tag-danger">🗑️ حذف کلید API</span>
                     <div class="row-group">
                         <select id="keyListSelect" style="flex: 1;">
                             <option value="">-- لیست کلیدها --</option>
