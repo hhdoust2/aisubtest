@@ -6,17 +6,13 @@
     <title>مدیریت صوت و ترجمه فیلم 🎙️🤖</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="card">
-        <div class="film-strip" aria-hidden="true"></div>
         <div class="card-header">
-            <div class="title-block">
-                <span class="eyebrow">AI SUBTITLE STUDIO</span>
-                <h2>مدیریت صوت و هوش مصنوعی NC 🎙️🤖</h2>
-            </div>
+            <h2>مدیریت صوت و هوش مصنوعی NC 🎙️🤖</h2>
             <div class="main-tabs">
                 <button type="button" class="main-tab-btn active" id="mainTabProcess">پردازش صوت 🎙️</button>
                 <button type="button" class="main-tab-btn" id="mainTabTranslate">ترجمه 🌐</button>
@@ -34,25 +30,25 @@
 
                 <div class="process-config">
                     <div class="section-box">
-                        <span class="section-title tag-rec">🎙️ بخش تبدیل صوت (Whisper)</span>
-                        <div style="margin-bottom: 8px;">
-                            <label for="assignWhisperSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">انتخاب پروایدر صوت:</label>
+                        <span class="section-title tag-mic">🎙️ بخش تبدیل صوت (Whisper)</span>
+                        <div class="field">
+                            <label for="assignWhisperSelect" class="field-label">انتخاب پروایدر صوت</label>
                             <select id="assignWhisperSelect"><option value="">-- انتخاب پروایدر --</option></select>
                         </div>
-                        <div style="margin-bottom: 15px;">
-                            <label for="keyWhisperSelect" style="display:block; font-size:11px; color:#fcd34d; margin-bottom:3px;">🔑 انتخاب کلید API صوت:</label>
+                        <div class="field field--last">
+                            <label for="keyWhisperSelect" class="field-label field-label--key">🔑 انتخاب کلید API صوت</label>
                             <select id="keyWhisperSelect"><option value="">-- انتخاب کلید --</option></select>
                         </div>
 
-                        <hr style="border: 0; border-top: 1px solid #374151; margin: 12px 0;">
+                        <hr class="divider">
 
                         <span class="section-title tag-translate">🌐 بخش ترجمه با مدل هوش مصنوعی</span>
-                        <div style="margin-bottom: 8px;">
-                            <label for="assignTranslateSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">انتخاب پروایدر و مدل ترجمه:</label>
+                        <div class="field">
+                            <label for="assignTranslateSelect" class="field-label">انتخاب پروایدر و مدل ترجمه</label>
                             <select id="assignTranslateSelect"><option value="">-- انتخاب پروایدر --</option></select>
                         </div>
-                        <div>
-                            <label for="keyTranslateSelect" style="display:block; font-size:11px; color:#fcd34d; margin-bottom:3px;">🔑 انتخاب کلید API ترجمه:</label>
+                        <div class="field field--last">
+                            <label for="keyTranslateSelect" class="field-label field-label--key">🔑 انتخاب کلید API ترجمه</label>
                             <select id="keyTranslateSelect"><option value="">-- انتخاب کلید --</option></select>
                         </div>
                     </div>
@@ -74,16 +70,16 @@
                             <input type="url" id="audio-url" class="link-input" placeholder="https://example.com/audio.mp3" />
                         </div>
 
-                        <div class="translate-box" style="margin-bottom: 8px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="googleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #d9a54f;">
+                        <div class="translate-box">
+                            <label class="check-row">
+                                <input type="checkbox" id="googleTranslateCheckbox" class="checkbox-input">
                                 <span>🌍 ترجمه زیرنویس به فارسی با گوگل ترنسلیت (پس‌زمینه)</span>
                             </label>
                         </div>
 
-                        <div class="translate-box" style="margin-bottom: 15px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="translateCheckbox" checked style="width: 16px; height: 16px; accent-color: #d9a54f;">
+                        <div class="translate-box translate-box--last">
+                            <label class="check-row">
+                                <input type="checkbox" id="translateCheckbox" checked class="checkbox-input">
                                 <span>🌐 ترجمه هوشمند زیرنویس به فارسی با مدل انتخاب‌شده</span>
                             </label>
                         </div>
@@ -115,16 +111,16 @@
                 <div class="process-config">
                     <div class="section-box">
                         <span class="section-title tag-translate">🌐 انتخاب پروایدر، مدل و کلید ترجمه</span>
-                        <div style="margin-bottom: 8px;">
-                            <label for="srtProviderSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">۱. انتخاب پروایدر:</label>
+                        <div class="field">
+                            <label for="srtProviderSelect" class="field-label">۱. انتخاب پروایدر</label>
                             <select id="srtProviderSelect"><option value="">-- انتخاب پروایدر --</option></select>
                         </div>
-                        <div style="margin-bottom: 8px;">
-                            <label for="srtModelSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">۲. انتخاب مدل:</label>
+                        <div class="field">
+                            <label for="srtModelSelect" class="field-label">۲. انتخاب مدل</label>
                             <select id="srtModelSelect"><option value="">-- ابتدا پروایدر را انتخاب کنید --</option></select>
                         </div>
-                        <div>
-                            <label for="srtKeySelect" style="display:block; font-size:11px; color:#fcd34d; margin-bottom:3px;">۳. انتخاب کلید API:</label>
+                        <div class="field field--last">
+                            <label for="srtKeySelect" class="field-label field-label--key">۳. انتخاب کلید API</label>
                             <select id="srtKeySelect"><option value="">-- انتخاب کلید --</option></select>
                         </div>
                     </div>
@@ -146,16 +142,16 @@
                             <input type="url" id="srt-url" class="link-input" placeholder="https://example.com/subtitle.srt" />
                         </div>
 
-                        <div class="translate-box" style="margin-bottom: 8px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="srtGoogleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #d9a54f;">
+                        <div class="translate-box">
+                            <label class="check-row">
+                                <input type="checkbox" id="srtGoogleTranslateCheckbox" class="checkbox-input">
                                 <span>🌍 ترجمه به فارسی با گوگل ترنسلیت (پس‌زمینه)</span>
                             </label>
                         </div>
 
-                        <div class="translate-box" style="margin-bottom: 15px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
-                                <input type="checkbox" id="srtAiTranslateCheckbox" checked style="width: 16px; height: 16px; accent-color: #d9a54f;">
+                        <div class="translate-box translate-box--last">
+                            <label class="check-row">
+                                <input type="checkbox" id="srtAiTranslateCheckbox" checked class="checkbox-input">
                                 <span>🌐 ترجمه هوشمند با مدل انتخاب‌شده</span>
                             </label>
                         </div>
@@ -186,7 +182,7 @@
             <div id="tabContentSettings" class="tab-content">
                 <div class="section-box">
                     <span class="section-title">📡 ثبت پروایدر و مدل جدید</span>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div class="stack">
                         <input type="text" id="provName" placeholder="نام پروایدر (مثلا: Groq)">
                         <input type="text" id="provBaseUrl" placeholder="Base URL (اندپوینت)" value="https://ai-reverse.aialsabela.workers.dev/groq/openai/v1">
                         <input type="text" id="provModel" placeholder="نام مدل — چند مدل را با کاما جدا کنید (مثلا: model-a, model-b)">
@@ -197,28 +193,28 @@
 
                 <div class="section-box">
                     <span class="section-title">🔑 ثبت و مدیریت کلیدهای API</span>
-                    <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+                    <div class="stack stack--tight">
                         <input type="text" id="keyLabelInput" placeholder="برچسب کلید (مثلا: groq1)">
                         <div class="row-group">
-                            <input type="password" id="keyValueInput" placeholder="ورود کلید API" style="flex: 1;">
-                            <button type="button" class="btn-primary" id="saveKeyBtn" style="background-color: #10b981; width: auto; white-space: nowrap;">ثبت 🔑</button>
+                            <input type="password" id="keyValueInput" placeholder="ورود کلید API" class="grow">
+                            <button type="button" class="btn-primary btn-auto" id="saveKeyBtn">ثبت 🔑</button>
                         </div>
                     </div>
 
-                    <hr style="border: 0; border-top: 1px solid #374151; margin: 12px 0;">
+                    <hr class="divider">
 
                     <span class="section-title tag-danger">🗑️ حذف کلید API</span>
                     <div class="row-group">
-                        <select id="keyListSelect" style="flex: 1;">
+                        <select id="keyListSelect" class="grow">
                             <option value="">-- لیست کلیدها --</option>
                         </select>
-                        <button type="button" class="delete-btn" id="deleteKeyBtn" style="width: auto;">حذف 🗑️</button>
+                        <button type="button" class="delete-btn" id="deleteKeyBtn">حذف 🗑️</button>
                     </div>
                 </div>
 
-                <div class="section-box" style="margin-bottom: 30px;">
+                <div class="section-box section-box--wide">
                     <span class="section-title">📦 پشتیبانی و بازیابی (فرمت JSON)</span>
-                    <p style="font-size: 11px; color: #9ca3af; margin: 0 0 8px;">
+                    <p class="hint-text">
                         ⚠️ کلیدهای API فقط در مرورگر همین دستگاه (localStorage) ذخیره می‌شوند و به هیچ سروری فرستاده نمی‌شوند.
                         فایل پشتیبان شامل کلیدهاست؛ آن را جایی امن نگه دارید.
                     </p>
