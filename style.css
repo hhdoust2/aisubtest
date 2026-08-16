@@ -433,7 +433,7 @@ hr { border-color: var(--border-soft) !important; }
         border-bottom: 1px solid var(--border-soft);
     }
 
-    .card-header .title-block { display: flex; flex-direction: column; align-items: flex-end; }
+    .card-header .title-block { display: flex; flex-direction: column; align-items: flex-end; order: 2; }
     .eyebrow { font-size: 10.5px; margin-bottom: 2px; text-align: right; }
     h2 { font-size: 18px; text-align: right; white-space: nowrap; }
 
@@ -443,6 +443,7 @@ hr { border-color: var(--border-soft) !important; }
         gap: 28px;
         justify-content: flex-start;
         border-bottom: none;
+        order: 1;
     }
     .main-tab-btn { flex: none; padding: 8px 4px; font-size: 13.5px; }
 
