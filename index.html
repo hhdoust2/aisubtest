@@ -1,166 +1,233 @@
-<!doctype html>
-<html lang="fa">
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Chat UI — Tabitoken proxy / Direct</title>
-  <!-- deploy-timestamp: 2026-08-15T06:25:18Z -->
-  <style>
-    body{font-family:system-ui,Segoe UI,Roboto;max-width:900px;margin:20px auto;padding:10px;direction:rtl}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    input[type=text], input[type=password], select{padding:8px;border:1px solid #ccc;border-radius:6px;width:100%}
-    .col{flex:1;min-width:220px}
-    #chat{border:1px solid #ddd;border-radius:8px;padding:12px;min-height:300px;overflow:auto;background:#fafafa}
-    .msg{margin:8px 0;padding:10px;border-radius:8px;max-width:80%;}
-    .user{background:#e6f7ff;margin-left:auto}
-    .assistant{background:#fff;border:1px solid #eee}
-    #composer{display:flex;gap:8px;margin-top:8px}
-    textarea{flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;min-height:70px}
-    button{padding:8px 14px;border-radius:6px;border:none;background:#0366d6;color:#fff;cursor:pointer}
-    .small{font-size:12px;color:#666;margin-top:6px}
-    .row{display:flex;gap:8px;align-items:center}
-    label{font-size:13px;color:#333}
-    code{background:#f1f1f1;padding:2px 6px;border-radius:4px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدیریت صوت و ترجمه فیلم 🎙️🤖</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>رابط چت (Tabitoken)</h2>
+    <div class="card">
+        <div class="card-header">
+            <h2>مدیریت صوت و هوش مصنوعی NC 🎙️🤖</h2>
+            <div class="main-tabs">
+                <button type="button" class="main-tab-btn active" id="mainTabProcess">پردازش صوت 🎙️</button>
+                <button type="button" class="main-tab-btn" id="mainTabTranslate">ترجمه 🌐</button>
+                <button type="button" class="main-tab-btn" id="mainTabSettings">تنظیمات ⚙️</button>
+            </div>
+        </div>
 
-  <div class="controls">
-    <div class="col">
-      <label>Endpoint (برای تست مستقیم)</label>
-      <input id="endpoint" type="text" value="https://tabitoken.com/v1/chat/completions" />
+        <div class="scrollable-content">
+            <!-- تب ۱: پردازش صوت -->
+            <div id="tabContentProcess" class="tab-content active">
+                <div class="warning-box" id="warningBox">
+                    ⚠️ <b>حجم فایل صوتی بیش از ۲۵ مگابایت است!</b><br>
+                    لطفاً فایل زیر ۲۵ مگابایت بارگذاری کنید.
+                </div>
+
+                <div class="process-config">
+                    <div class="section-box">
+                        <span class="section-title" style="color: #34d399;">🎙️ بخش تبدیل صوت (Whisper)</span>
+                        <div style="margin-bottom: 8px;">
+                            <label for="assignWhisperSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">انتخاب پروایدر صوت:</label>
+                            <select id="assignWhisperSelect"><option value="">-- انتخاب پروایدر --</option></select>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="keyWhisperSelect" style="display:block; font-size:11px; color:#fcd34d; margin-bottom:3px;">🔑 انتخاب کلید API صوت:</label>
+                            <select id="keyWhisperSelect"><option value="">-- انتخاب کلید --</option></select>
+                        </div>
+
+                        <hr style="border: 0; border-top: 1px solid #374151; margin: 12px 0;">
+
+                        <span class="section-title" style="color: #818cf8;">🌐 بخش ترجمه با مدل هوش مصنوعی</span>
+                        <div style="margin-bottom: 8px;">
+                            <label for="assignTranslateSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">انتخاب پروایدر و مدل ترجمه:</label>
+                            <select id="assignTranslateSelect"><option value="">-- انتخاب پروایدر --</option></select>
+                        </div>
+                        <div>
+                            <label for="keyTranslateSelect" style="display:block; font-size:11px; color:#fcd34d; margin-bottom:3px;">🔑 انتخاب کلید API ترجمه:</label>
+                            <select id="keyTranslateSelect"><option value="">-- انتخاب کلید --</option></select>
+                        </div>
+                    </div>
+
+                    <div class="input-type-selector">
+                        <button type="button" class="tab-btn active" id="tabUpload">آپلود فایل صوتی 📁</button>
+                        <button type="button" class="tab-btn" id="tabLink">وارد کردن لینک مستقیم 🔗</button>
+                    </div>
+
+                    <form id="uploadForm">
+                        <div class="file-input-wrapper" id="fileInputWrapper">
+                            <label for="file-upload" class="custom-file-upload" id="file-label">
+                                انتخاب فایل صوتی فیلم (تا ۲۵ مگابایت)
+                            </label>
+                            <input id="file-upload" type="file" accept="audio/*" />
+                        </div>
+
+                        <div class="link-input-wrapper" id="linkInputWrapper">
+                            <input type="url" id="audio-url" class="link-input" placeholder="https://example.com/audio.mp3" />
+                        </div>
+
+                        <div class="translate-box" style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
+                                <input type="checkbox" id="googleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <span>🌍 ترجمه زیرنویس به فارسی با گوگل ترنسلیت (پس‌زمینه)</span>
+                            </label>
+                        </div>
+
+                        <div class="translate-box" style="margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
+                                <input type="checkbox" id="translateCheckbox" checked style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <span>🌐 ترجمه هوشمند زیرنویس به فارسی با مدل انتخاب‌شده</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="submitBtn">استخراج و ساخت SRT 🚀</button>
+                    </form>
+                </div>
+
+                <div class="process-result">
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-status">
+                            <span id="progressState">در حال آماده‌سازی...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar" id="progressBar"></div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="downloadBtn" class="download-btn">دانلود فایل زیرنویس (SRT) 📥</button>
+
+                    <div class="loader" id="loader"></div>
+                    <div id="output"></div>
+                </div>
+            </div>
+
+            <!-- تب ۲: ترجمه فایل SRT -->
+            <div id="tabContentTranslate" class="tab-content">
+                <div class="process-config">
+                    <div class="section-box">
+                        <span class="section-title" style="color: #818cf8;">🌐 انتخاب پروایدر، مدل و کلید ترجمه</span>
+                        <div style="margin-bottom: 8px;">
+                            <label for="srtProviderSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">۱. انتخاب پروایدر:</label>
+                            <select id="srtProviderSelect"><option value="">-- انتخاب پروایدر --</option></select>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <label for="srtModelSelect" style="display:block; font-size:11px; color:#d1d5db; margin-bottom:3px;">۲. انتخاب مدل:</label>
+                            <select id="srtModelSelect"><option value="">-- ابتدا پروایدر را انتخاب کنید --</option></select>
+                        </div>
+                        <div>
+                            <label for="srtKeySelect" style="display:block; font-size:11px; color:#fcd34d; margin-bottom:3px;">۳. انتخاب کلید API:</label>
+                            <select id="srtKeySelect"><option value="">-- انتخاب کلید --</option></select>
+                        </div>
+                    </div>
+
+                    <div class="input-type-selector">
+                        <button type="button" class="tab-btn active" id="srtTabUpload">آپلود فایل SRT 📁</button>
+                        <button type="button" class="tab-btn" id="srtTabLink">وارد کردن لینک مستقیم 🔗</button>
+                    </div>
+
+                    <form id="srtUploadForm">
+                        <div class="file-input-wrapper" id="srtFileInputWrapper">
+                            <label for="srt-file-upload" class="custom-file-upload" id="srt-file-label">
+                                انتخاب فایل زیرنویس (SRT)
+                            </label>
+                            <input id="srt-file-upload" type="file" accept=".srt" />
+                        </div>
+
+                        <div class="link-input-wrapper" id="srtLinkInputWrapper">
+                            <input type="url" id="srt-url" class="link-input" placeholder="https://example.com/subtitle.srt" />
+                        </div>
+
+                        <div class="translate-box" style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
+                                <input type="checkbox" id="srtGoogleTranslateCheckbox" style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <span>🌍 ترجمه به فارسی با گوگل ترنسلیت (پس‌زمینه)</span>
+                            </label>
+                        </div>
+
+                        <div class="translate-box" style="margin-bottom: 15px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #e0e0e0; font-size: 13px;">
+                                <input type="checkbox" id="srtAiTranslateCheckbox" checked style="width: 16px; height: 16px; accent-color: #4f46e5;">
+                                <span>🌐 ترجمه هوشمند با مدل انتخاب‌شده</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="srtSubmitBtn">ترجمه زیرنویس 🌐</button>
+                    </form>
+                </div>
+
+                <div class="process-result">
+                    <div class="progress-container" id="srtProgressContainer">
+                        <div class="progress-status">
+                            <span id="srtProgressState">در حال آماده‌سازی...</span>
+                            <span id="srtProgressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar" id="srtProgressBar"></div>
+                        </div>
+                    </div>
+
+                    <button type="button" id="srtDownloadBtn" class="download-btn">دانلود فایل ترجمه‌شده (SRT) 📥</button>
+
+                    <div class="loader" id="srtLoader"></div>
+                    <div id="srtOutput"></div>
+                </div>
+            </div>
+
+            <!-- تب ۳: تنظیمات -->
+            <div id="tabContentSettings" class="tab-content">
+                <div class="section-box">
+                    <span class="section-title">📡 ثبت پروایدر و مدل جدید</span>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <input type="text" id="provName" placeholder="نام پروایدر (مثلا: Groq)">
+                        <input type="text" id="provBaseUrl" placeholder="Base URL (اندپوینت)" value="https://ai-reverse.aialsabela.workers.dev/groq/openai/v1">
+                        <input type="text" id="provModel" placeholder="نام مدل — چند مدل را با کاما جدا کنید (مثلا: model-a, model-b)">
+                        <input type="text" id="provMaxRps" placeholder="حداکثر Requests/Second (اختیاری، از داشبورد پروایدر) — مثلا 0.07">
+                        <button type="button" class="btn-primary" id="saveEndpointBtn">افزودن پروایدر به لیست ➕</button>
+                    </div>
+                </div>
+
+                <div class="section-box">
+                    <span class="section-title">🔑 ثبت و مدیریت کلیدهای API</span>
+                    <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;">
+                        <input type="text" id="keyLabelInput" placeholder="برچسب کلید (مثلا: groq1)">
+                        <div class="row-group">
+                            <input type="password" id="keyValueInput" placeholder="ورود کلید API" style="flex: 1;">
+                            <button type="button" class="btn-primary" id="saveKeyBtn" style="background-color: #10b981; width: auto; white-space: nowrap;">ثبت 🔑</button>
+                        </div>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid #374151; margin: 12px 0;">
+
+                    <span class="section-title" style="color: #fca5a5;">🗑️ حذف کلید API</span>
+                    <div class="row-group">
+                        <select id="keyListSelect" style="flex: 1;">
+                            <option value="">-- لیست کلیدها --</option>
+                        </select>
+                        <button type="button" class="delete-btn" id="deleteKeyBtn" style="width: auto;">حذف 🗑️</button>
+                    </div>
+                </div>
+
+                <div class="section-box" style="margin-bottom: 30px;">
+                    <span class="section-title">📦 پشتیبانی و بازیابی (فرمت JSON)</span>
+                    <p style="font-size: 11px; color: #9ca3af; margin: 0 0 8px;">
+                        ⚠️ کلیدهای API فقط در مرورگر همین دستگاه (localStorage) ذخیره می‌شوند و به هیچ سروری فرستاده نمی‌شوند.
+                        فایل پشتیبان شامل کلیدهاست؛ آن را جایی امن نگه دارید.
+                    </p>
+                    <div class="backup-group">
+                        <button type="button" class="backup-btn" id="exportBtn">پشتیبان‌گیری 📥</button>
+                        <button type="button" class="backup-btn" id="importBtn">بازیابی 📤</button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="col">
-      <label>Model</label>
-      <input id="model" type="text" value="claude-opus-5-thinking" />
-    </div>
-    <div class="col">
-      <label>API Key (برای تست مستقیم: فقط برای تست موقتی، خطر امنیتی دارد)</label>
-      <input id="apiKey" type="password" placeholder="Bearer sk-... یا فقط کلید را وارد کنید" />
-    </div>
-  </div>
 
-  <div id="chat" aria-live="polite"></div>
-
-  <div id="composer">
-    <textarea id="input" placeholder="پیام خود را اینجا بنویسید..."></textarea>
-    <div style="display:flex;flex-direction:column">
-      <button id="sendBtn" type="button">ارسال</button>
-      <button id="clearBtn" style="margin-top:8px;background:#6c757d" type="button">پاک کردن</button>
-    </div>
-  </div>
-
-  <div class="small">
-    هشدار امنیتی: وارد کردن API Key در کلاینت (مرورگر) ناامن است و برای تست‌های موقت مجاز است، اما در محیط تولید از پراکسی و متغیرهای محیطی استفاده کنید.
-  </div>
-
-  <script>
-    const chatEl = document.getElementById('chat');
-    const inputEl = document.getElementById('input');
-    const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const endpointEl = document.getElementById('endpoint');
-    const modelEl = document.getElementById('model');
-    const apiKeyEl = document.getElementById('apiKey');
-
-    // By default use the direct Tabitoken endpoint (as requested). You can switch to /api/proxy if desired.
-    let messages = [];
-
-    function renderMessages() {
-      chatEl.innerHTML = '';
-      messages.forEach(m => {
-        if (m.role === 'system') return; // مخفی کردن system از لیست نمایش
-        const d = document.createElement('div');
-        d.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
-        d.textContent = m.content;
-        chatEl.appendChild(d);
-      });
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
-
-    async function sendMessage() {
-      const text = inputEl.value.trim();
-      if (!text) return;
-      const endpoint = endpointEl.value.trim();
-      const model = modelEl.value.trim() || 'claude-opus-5-thinking';
-      const apiKey = apiKeyEl.value.trim();
-
-      messages.push({ role: 'user', content: text });
-      renderMessages();
-      inputEl.value = '';
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'در حال ارسال...';
-
-      try {
-        const payload = { model, messages: messages.filter(m => m.role !== 'system') };
-
-        const headers = { 'Content-Type': 'application/json' };
-        if (apiKey) headers['Authorization'] = apiKey.startsWith('Bearer') ? apiKey : 'Bearer ' + apiKey;
-
-        const resp = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          mode: 'cors'
-        });
-
-        console.log('fetch status', resp.status, resp.statusText);
-        const textResp = await resp.text();
-        console.log('raw response text:', textResp);
-        let data;
-        try { data = JSON.parse(textResp); } catch (_) { data = textResp; }
-
-        let assistantText = '';
-
-        if (typeof data === 'string') {
-          assistantText = data;
-        } else if (data) {
-          if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
-            assistantText = data.choices[0].message.content;
-          } else if (data.choices && data.choices[0] && (data.choices[0].text || data.choices[0].content)) {
-            assistantText = data.choices[0].text || data.choices[0].content;
-          } else if (data.output && Array.isArray(data.output) && data.output[0] && data.output[0].content) {
-            assistantText = data.output[0].content;
-          } else if (data.message && data.message.content) {
-            assistantText = data.message.content;
-          } else if (data.error) {
-            assistantText = 'خطا: ' + (data.error.message || data.error);
-          } else {
-            assistantText = JSON.stringify(data, null, 2);
-          }
-        } else {
-          assistantText = 'پاسخ غیرقابل خواندن از سرور';
-        }
-
-        messages.push({ role: 'assistant', content: assistantText });
-        renderMessages();
-
-      } catch (err) {
-        console.error(err);
-        messages.push({ role: 'assistant', content: 'خطا در ارتباط: ' + (err.message || err) });
-        renderMessages();
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'ارسال';
-      }
-    }
-
-    sendBtn.addEventListener('click', sendMessage);
-    inputEl.addEventListener('keydown', (e) => {
-      // جلوگیری از submit فرم با Enter و ارسال تنها با Ctrl+Enter یا Cmd+Enter
-      if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        return;
-      }
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        sendMessage();
-      }
-    });
-    clearBtn.addEventListener('click', () => { messages = []; renderMessages(); });
-
-    messages.push({ role: 'system', content: 'شما در یک رابط چت ساده هستید.' });
-    renderMessages();
-  </script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
